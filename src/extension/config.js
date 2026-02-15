@@ -13,9 +13,15 @@
   }
 
   var PRESET_KEYS = [
+    "headerTitle",
+    "headerColor",
+    "footerColor",
+    "panelBackgroundColor",
+    "stampBackgroundColor",
     "showEmotes",
     "showSubBadges",
     "showBitsBadges",
+    "showStampNames",
     "tierOrder",
     "columns",
     "emoteSize",
@@ -30,9 +36,15 @@
   var LOCAL_STORAGE_KEY = "emotedeck-config-local";
 
   var controls = {
+    headerTitle: document.getElementById("headerTitle"),
+    headerColor: document.getElementById("headerColor"),
+    footerColor: document.getElementById("footerColor"),
+    panelBackgroundColor: document.getElementById("panelBackgroundColor"),
+    stampBackgroundColor: document.getElementById("stampBackgroundColor"),
     showEmotes: document.getElementById("showEmotes"),
     showSubBadges: document.getElementById("showSubBadges"),
     showBitsBadges: document.getElementById("showBitsBadges"),
+    showStampNames: document.getElementById("showStampNames"),
     tierOrder: document.getElementById("tierOrder"),
     columns: document.getElementById("columns"),
     emoteSize: document.getElementById("emoteSize"),
@@ -102,9 +114,15 @@
   }
 
   function writeForm(config) {
+    controls.headerTitle.value = config.headerTitle;
+    controls.headerColor.value = config.headerColor;
+    controls.footerColor.value = config.footerColor;
+    controls.panelBackgroundColor.value = config.panelBackgroundColor;
+    controls.stampBackgroundColor.value = config.stampBackgroundColor;
     controls.showEmotes.checked = !!config.showEmotes;
     controls.showSubBadges.checked = !!config.showSubBadges;
     controls.showBitsBadges.checked = !!config.showBitsBadges;
+    controls.showStampNames.checked = !!config.showStampNames;
     controls.tierOrder.value = config.tierOrder;
     controls.columns.value = String(config.columns);
     controls.emoteSize.value = String(config.emoteSize);
@@ -119,9 +137,15 @@
 
   function readForm() {
     var nextConfig = {
+      headerTitle: controls.headerTitle.value,
+      headerColor: controls.headerColor.value,
+      footerColor: controls.footerColor.value,
+      panelBackgroundColor: controls.panelBackgroundColor.value,
+      stampBackgroundColor: controls.stampBackgroundColor.value,
       showEmotes: controls.showEmotes.checked,
       showSubBadges: controls.showSubBadges.checked,
       showBitsBadges: controls.showBitsBadges.checked,
+      showStampNames: controls.showStampNames.checked,
       tierOrder: controls.tierOrder.value,
       columns: parseInt(controls.columns.value, 10),
       emoteSize: parseInt(controls.emoteSize.value, 10),
@@ -143,6 +167,10 @@
     controls.primaryColor.value = preset.primary;
     controls.accentColor.value = preset.accent;
     controls.backgroundColor.value = preset.background;
+    controls.headerColor.value = preset.primary;
+    controls.footerColor.value = preset.primary;
+    controls.panelBackgroundColor.value = preset.background;
+    controls.stampBackgroundColor.value = preset.accent;
   }
 
   function renderPreview() {
@@ -282,7 +310,7 @@
       applyPresetColors(controls.theme.value);
     }
 
-    if (targetId === "primaryColor" || targetId === "accentColor" || targetId === "backgroundColor") {
+    if (targetId === "primaryColor" || targetId === "accentColor" || targetId === "backgroundColor" || targetId === "headerColor" || targetId === "footerColor" || targetId === "panelBackgroundColor" || targetId === "stampBackgroundColor") {
       controls.theme.value = "custom";
     }
 

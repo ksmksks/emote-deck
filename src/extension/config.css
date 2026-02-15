@@ -1,10 +1,19 @@
 :root {
-  --primary: #1f8ef1;
-  --accent: #f9c74f;
-  --background: #111827;
+  --primary: #e56aa6;
+  --accent: #ffc8dd;
+  --background: #fff7fb;
+  --text-color: #1f2330;
+  --header-bg: #e56aa6;
+  --footer-bg: #e56aa6;
+  --header-text: #ffffff;
+  --footer-text: #ffffff;
+  --panel-bg: #ffffff;
+  --stamp-bg: #fff0f6;
+  --panel-text: #1f2330;
+  --stamp-text: #1f2330;
   --radius: 12px;
   --glow: 12px;
-  --glow-color: rgba(249, 199, 79, 0.35);
+  --glow-color: rgba(229, 106, 166, 0.35);
 }
 
 * {
@@ -33,7 +42,7 @@ body {
 
 .config-shell {
   display: grid;
-  grid-template-columns: minmax(240px, 34vw) minmax(0, 1fr);
+  grid-template-columns: minmax(250px, 360px) minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -41,8 +50,8 @@ body {
 .preview-panel {
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(7, 11, 22, 0.62);
-  backdrop-filter: blur(4px);
+  background: rgba(7, 11, 22, 0.64);
+  backdrop-filter: blur(5px);
 }
 
 .config-panel {
@@ -55,7 +64,7 @@ body {
 
 .config-header h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 21px;
   letter-spacing: 0.03em;
 }
 
@@ -68,7 +77,7 @@ body {
 .config-form {
   margin-top: 14px;
   display: grid;
-  gap: 9px;
+  gap: 10px;
 }
 
 .control {
@@ -83,8 +92,23 @@ body {
   gap: 10px;
 }
 
-.control input[type="color"] {
+.control input[type="text"],
+.control input[type="color"],
+.control select,
+.control input[type="range"] {
   width: 100%;
+}
+
+.control input[type="text"] {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.26);
+  color: #f0f5ff;
+  padding: 0 10px;
+}
+
+.control input[type="color"] {
   height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 10px;
@@ -94,11 +118,6 @@ body {
 .control input[type="checkbox"] {
   width: 16px;
   height: 16px;
-}
-
-.control select,
-.control input[type="range"] {
-  width: 100%;
 }
 
 .range-wrap {
@@ -124,8 +143,8 @@ body {
 .buttons button {
   min-height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(130deg, #264ccf, #3255d4);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: linear-gradient(125deg, #264ccf, #3255d4);
   color: #fff;
   cursor: pointer;
   font-size: 13px;
@@ -146,15 +165,47 @@ body {
 }
 
 .preview-panel h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
+  margin: 0 0 10px;
+  font-size: 17px;
 }
 
-/* Preview 側は panel.css と同じ見た目になるようクラス定義を共有 */
+.preview-frame {
+  width: 300px;
+  height: 500px;
+  max-width: 100%;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  padding: 0;
+  overflow: hidden;
+}
+
+#preview {
+  width: 100%;
+  height: 100%;
+}
+
+/* panel.css と同じ見た目をプレビューで再現 */
 .ed-shell {
+  width: min(100%, 300px);
+  min-height: 500px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(31, 35, 48, 0.16);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  overflow: hidden;
+  animation: shell-in 420ms cubic-bezier(.2, .7, .2, 1) both;
+}
+
+#preview .ed-shell {
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
 }
 
 .ed-header {
@@ -162,72 +213,97 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  padding: 8px 10px;
+  margin: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--header-bg);
+  color: var(--header-text);
 }
 
 .ed-title {
   margin: 0;
-  font-size: 18px;
-  letter-spacing: 0.04em;
+  font-size: clamp(15px, 4.4vw, 18px);
+  letter-spacing: 0.03em;
 }
 
 .ed-subtitle {
   margin: 0;
-  font-size: 11px;
-  opacity: 0.82;
+  font-size: 10px;
+  opacity: 0.84;
 }
 
 .ed-tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+  gap: 6px;
 }
 
 .ed-tab {
-  border: 1px solid rgba(255, 255, 255, 0.26);
+  border: 1px solid rgba(31, 35, 48, 0.22);
   border-radius: var(--radius);
-  background: rgba(0, 0, 0, 0.22);
-  color: #f8fafc;
-  padding: 8px 10px;
-  font-size: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-color);
+  padding: 7px 6px;
+  font-size: 11px;
   cursor: pointer;
+  animation: rise-in 340ms ease both;
 }
 
 .ed-tab.is-active {
-  background: linear-gradient(120deg, var(--primary), rgba(255, 255, 255, 0.06));
+  background: linear-gradient(120deg, var(--primary), rgba(255, 255, 255, 0.28));
   border-color: var(--accent);
+  color: #1f2330;
 }
 
 .section {
   max-height: 800px;
   overflow-y: auto;
+  min-height: 0;
+  flex: 1;
   padding-right: 2px;
 }
 
+#preview .section {
+  max-height: none;
+}
+
 .ed-tier {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .ed-tier-title {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: var(--accent);
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #9b355f;
 }
 
 .ed-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 10px;
-  max-width: calc(var(--columns, 4) * 110px);
+  gap: 8px;
+  max-width: calc(var(--columns, 4) * (var(--item-frame-size, 72px) + 16px));
   margin: 0 auto;
 }
 
 .ed-item {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(31, 35, 48, 0.22);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 8px;
+  background: var(--stamp-bg);
+  color: var(--stamp-text);
+  padding: var(--item-padding, 8px);
   text-align: center;
   box-shadow: 0 0 var(--glow) var(--glow-color);
+  animation: rise-in 460ms ease both;
+}
+
+.ed-item--emote {
+  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--label-space, 30px));
+  min-width: min(100%, var(--item-frame-size, 72px));
+  justify-self: center;
+}
+
+.ed-item--badge {
+  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--label-space, 30px));
 }
 
 .ed-image {
@@ -238,13 +314,13 @@ body {
 
 .ed-label {
   margin: 6px 0 0;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.25;
 }
 
 .ed-meta {
   margin: 3px 0 0;
-  font-size: 10px;
+  font-size: 9px;
   opacity: 0.82;
 }
 
@@ -252,13 +328,56 @@ body {
   margin: 4px 0 0;
   padding: 12px;
   border-radius: var(--radius);
-  border: 1px dashed rgba(255, 255, 255, 0.26);
-  background: rgba(0, 0, 0, 0.18);
-  font-size: 12px;
+  border: 1px dashed rgba(31, 35, 48, 0.28);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+.ed-footer {
+  padding: 7px 10px;
+  margin: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--footer-bg);
+  color: var(--footer-text);
+}
+
+.ed-footer-text {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+@keyframes shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 980px) {
   .config-shell {
     grid-template-columns: 1fr;
+  }
+
+  .preview-frame {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 5;
   }
 }

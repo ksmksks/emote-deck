@@ -5,13 +5,19 @@
     showEmotes: true,
     showSubBadges: true,
     showBitsBadges: true,
+    showStampNames: true,
+    headerTitle: "EmoteDeck",
+    headerColor: "#e56aa6",
+    footerColor: "#e56aa6",
+    panelBackgroundColor: "#ffffff",
+    stampBackgroundColor: "#fff0f6",
     tierOrder: "asc",
     columns: 4,
     emoteSize: 56,
     theme: "custom",
-    primaryColor: "#1f8ef1",
-    accentColor: "#f9c74f",
-    backgroundColor: "#111827",
+    primaryColor: "#e56aa6",
+    accentColor: "#ffc8dd",
+    backgroundColor: "#fff7fb",
     borderRadius: 12,
     glowIntensity: 12
   };
@@ -32,6 +38,11 @@
       primary: "#2a9d8f",
       accent: "#e9c46a",
       background: "#1b4332"
+    },
+    blush: {
+      primary: "#e56aa6",
+      accent: "#ffc8dd",
+      background: "#fff7fb"
     }
   };
 
@@ -63,6 +74,21 @@
     return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
   }
 
+  function getContrastingTextColor(hex) {
+    var normalized = (hex || "").replace("#", "");
+    if (normalized.length === 3) {
+      normalized = normalized[0] + normalized[0] + normalized[1] + normalized[1] + normalized[2] + normalized[2];
+    }
+    if (normalized.length !== 6) {
+      return "#1f2330";
+    }
+    var r = parseInt(normalized.slice(0, 2), 16);
+    var g = parseInt(normalized.slice(2, 4), 16);
+    var b = parseInt(normalized.slice(4, 6), 16);
+    var luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    return luma > 0.62 ? "#1f2330" : "#f8fafc";
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -78,6 +104,8 @@
     cfg.showEmotes = cfg.showEmotes !== false;
     cfg.showSubBadges = cfg.showSubBadges !== false;
     cfg.showBitsBadges = cfg.showBitsBadges !== false;
+    cfg.showStampNames = cfg.showStampNames !== false;
+    cfg.headerTitle = String(cfg.headerTitle || DEFAULT_CONFIG.headerTitle).trim().slice(0, 48) || DEFAULT_CONFIG.headerTitle;
 
     cfg.tierOrder = cfg.tierOrder === "desc" ? "desc" : "asc";
     cfg.columns = clamp(parseInt(cfg.columns, 10) || DEFAULT_CONFIG.columns, 2, 8);
@@ -92,6 +120,10 @@
     cfg.primaryColor = sanitizeColor(cfg.primaryColor, DEFAULT_CONFIG.primaryColor);
     cfg.accentColor = sanitizeColor(cfg.accentColor, DEFAULT_CONFIG.accentColor);
     cfg.backgroundColor = sanitizeColor(cfg.backgroundColor, DEFAULT_CONFIG.backgroundColor);
+    cfg.headerColor = sanitizeColor(cfg.headerColor, DEFAULT_CONFIG.headerColor);
+    cfg.footerColor = sanitizeColor(cfg.footerColor, DEFAULT_CONFIG.footerColor);
+    cfg.panelBackgroundColor = sanitizeColor(cfg.panelBackgroundColor, DEFAULT_CONFIG.panelBackgroundColor);
+    cfg.stampBackgroundColor = sanitizeColor(cfg.stampBackgroundColor, DEFAULT_CONFIG.stampBackgroundColor);
     cfg.activeTab = ["emotes", "subBadges", "bitsBadges"].indexOf(cfg.activeTab) >= 0 ? cfg.activeTab : "emotes";
 
     return cfg;
@@ -146,10 +178,24 @@
   function applyThemeVariables(cfg) {
     var theme = resolveTheme(cfg);
     var root = document.documentElement;
+    var textColor = getContrastingTextColor(theme.background);
+    var headerTextColor = getContrastingTextColor(cfg.headerColor);
+    var footerTextColor = getContrastingTextColor(cfg.footerColor);
+    var panelTextColor = getContrastingTextColor(cfg.panelBackgroundColor);
+    var stampTextColor = getContrastingTextColor(cfg.stampBackgroundColor);
 
     root.style.setProperty("--primary", theme.primary);
     root.style.setProperty("--accent", theme.accent);
     root.style.setProperty("--background", theme.background);
+    root.style.setProperty("--text-color", textColor);
+    root.style.setProperty("--header-bg", cfg.headerColor);
+    root.style.setProperty("--footer-bg", cfg.footerColor);
+    root.style.setProperty("--header-text", headerTextColor);
+    root.style.setProperty("--footer-text", footerTextColor);
+    root.style.setProperty("--panel-bg", cfg.panelBackgroundColor);
+    root.style.setProperty("--stamp-bg", cfg.stampBackgroundColor);
+    root.style.setProperty("--panel-text", panelTextColor);
+    root.style.setProperty("--stamp-text", stampTextColor);
     root.style.setProperty("--radius", cfg.borderRadius + "px");
     root.style.setProperty("--glow", cfg.glowIntensity + "px");
     root.style.setProperty("--glow-color", hexToRgba(theme.accent, 0.35));
@@ -182,7 +228,7 @@
 
   function renderEmotes(model, cfg) {
     var tierOrder = cfg.tierOrder === "desc" ? ["3000", "2000", "1000"] : ["1000", "2000", "3000"];
-    var tierNames = { "1000": "Tier 1000", "2000": "Tier 2000", "3000": "Tier 3000" };
+    var tierNames = { "1000": "Tier 1", "2000": "Tier 2", "3000": "Tier 3" };
     var html = "";
     var total = 0;
 
@@ -200,7 +246,9 @@
           var emoteName = escapeHtml(emote.name || emote.id || "emote");
           html += '<article class="ed-item ed-item--emote">';
           html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
-          html += '<p class="ed-label">' + emoteName + "</p>";
+          if (cfg.showStampNames) {
+            html += '<p class="ed-label">' + emoteName + "</p>";
+          }
           html += "</article>";
         });
         html += "</div>";
@@ -214,7 +262,7 @@
     return html;
   }
 
-  function renderBadges(list, emptyMessage) {
+  function renderBadges(list, emptyMessage, cfg) {
     if (!list.length) {
       return renderEmptyState(emptyMessage);
     }
@@ -224,10 +272,12 @@
       var title = escapeHtml(badge.title || badge.id || "badge");
       var desc = escapeHtml(badge.description || "");
       var imageUrl = escapeHtml(badge.imageUrl || "");
-      html += '<article class="ed-item">';
+      html += '<article class="ed-item ed-item--badge">';
       html += '<img class="ed-image" src="' + imageUrl + '" alt="' + title + '" loading="lazy">';
-      html += '<p class="ed-label">' + title + "</p>";
-      if (desc) {
+      if (cfg.showStampNames) {
+        html += '<p class="ed-label">' + title + "</p>";
+      }
+      if (cfg.showStampNames && desc) {
         html += '<p class="ed-meta">' + desc + "</p>";
       }
       html += "</article>";
@@ -247,12 +297,19 @@
 
     container.style.setProperty("--columns", String(cfg.columns));
     container.style.setProperty("--emote-size", cfg.emoteSize + "px");
+    container.style.setProperty("--item-padding", clamp(Math.round(cfg.emoteSize * 0.18), 6, 18) + "px");
+    container.style.setProperty("--item-frame-size", cfg.emoteSize + clamp(Math.round(cfg.emoteSize * 0.18), 6, 18) * 2 + "px");
+    container.style.setProperty("--label-space", cfg.showStampNames ? "30px" : "6px");
 
     var tabs = getEnabledTabs(cfg);
     if (!tabs.length) {
       container.innerHTML = '<section class="ed-shell">' +
-        '<header class="ed-header"><h2 class="ed-title">EmoteDeck</h2></header>' +
-        renderEmptyState("All categories are OFF. Enable at least one in Config.") +
+        '<header class="ed-header">' +
+        '<h2 class="ed-title">' + escapeHtml(cfg.headerTitle) + "</h2>" +
+        '<p class="ed-subtitle">Twitch channel rewards</p>' +
+        "</header>" +
+        '<section class="section" data-ed-panel="active">' + renderEmptyState("All categories are OFF. Enable at least one in Config.") + "</section>" +
+        '<footer class="ed-footer"><p class="ed-footer-text">EmoteDeck Panel</p></footer>' +
         "</section>";
       return;
     }
@@ -263,14 +320,14 @@
     if (activeTab === "emotes") {
       panelHtml = renderEmotes(model, cfg);
     } else if (activeTab === "subBadges") {
-      panelHtml = renderBadges(model.subBadges, "No subscriber badges found.");
+      panelHtml = renderBadges(model.subBadges, "No subscriber badges found.", cfg);
     } else {
-      panelHtml = renderBadges(model.bitsBadges, "No bits badges found.");
+      panelHtml = renderBadges(model.bitsBadges, "No bits badges found.", cfg);
     }
 
     container.innerHTML = '<section class="ed-shell">' +
       '<header class="ed-header">' +
-      '<h2 class="ed-title">EmoteDeck</h2>' +
+      '<h2 class="ed-title">' + escapeHtml(cfg.headerTitle) + "</h2>" +
       '<p class="ed-subtitle">Twitch channel rewards</p>' +
       "</header>" +
       '<nav class="ed-tabs" role="tablist">' +
@@ -282,6 +339,7 @@
       }).join("") +
       "</nav>" +
       '<section class="section" data-ed-panel="active">' + panelHtml + "</section>" +
+      '<footer class="ed-footer"><p class="ed-footer-text">EmoteDeck Panel</p></footer>' +
       "</section>";
 
     Array.prototype.forEach.call(container.querySelectorAll("[data-ed-tab]"), function (button) {

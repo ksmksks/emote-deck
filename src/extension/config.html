@@ -12,10 +12,25 @@
       <section class="config-panel">
         <header class="config-header">
           <h1>EmoteDeck Config</h1>
-          <p>設定はリアルタイムで右側プレビューに反映されます。</p>
+          <p>設定はプレビューへリアルタイム反映されます。</p>
         </header>
 
         <form id="config-form" class="config-form" autocomplete="off">
+          <label class="control">
+            <span>headerTitle</span>
+            <input id="headerTitle" type="text" maxlength="48" placeholder="EmoteDeck">
+          </label>
+
+          <label class="control">
+            <span>headerColor</span>
+            <input id="headerColor" type="color" value="#e56aa6">
+          </label>
+
+          <label class="control">
+            <span>footerColor</span>
+            <input id="footerColor" type="color" value="#e56aa6">
+          </label>
+
           <label class="control checkbox">
             <input id="showEmotes" type="checkbox" checked>
             <span>showEmotes</span>
@@ -31,11 +46,16 @@
             <span>showBitsBadges</span>
           </label>
 
+          <label class="control checkbox">
+            <input id="showStampNames" type="checkbox" checked>
+            <span>showStampNames</span>
+          </label>
+
           <label class="control">
             <span>tierOrder</span>
             <select id="tierOrder">
-              <option value="asc">1000 → 3000</option>
-              <option value="desc">3000 → 1000</option>
+              <option value="asc">Tier 1 -> Tier 3</option>
+              <option value="desc">Tier 3 -> Tier 1</option>
             </select>
           </label>
 
@@ -59,6 +79,7 @@
             <span>theme</span>
             <select id="theme">
               <option value="custom">custom</option>
+              <option value="blush">blush</option>
               <option value="ocean">ocean</option>
               <option value="sunset">sunset</option>
               <option value="forest">forest</option>
@@ -67,17 +88,27 @@
 
           <label class="control">
             <span>primaryColor</span>
-            <input id="primaryColor" type="color" value="#1f8ef1">
+            <input id="primaryColor" type="color" value="#e56aa6">
           </label>
 
           <label class="control">
             <span>accentColor</span>
-            <input id="accentColor" type="color" value="#f9c74f">
+            <input id="accentColor" type="color" value="#ffc8dd">
           </label>
 
           <label class="control">
             <span>backgroundColor</span>
-            <input id="backgroundColor" type="color" value="#111827">
+            <input id="backgroundColor" type="color" value="#fff7fb">
+          </label>
+
+          <label class="control">
+            <span>panelBackgroundColor</span>
+            <input id="panelBackgroundColor" type="color" value="#ffffff">
+          </label>
+
+          <label class="control">
+            <span>stampBackgroundColor</span>
+            <input id="stampBackgroundColor" type="color" value="#fff0f6">
           </label>
 
           <label class="control">
@@ -105,8 +136,10 @@
       </section>
 
       <section class="preview-panel">
-        <h2>Preview</h2>
-        <div id="preview"></div>
+        <h2>Preview (300 x 500)</h2>
+        <div class="preview-frame">
+          <div id="preview"></div>
+        </div>
       </section>
     </main>
 
