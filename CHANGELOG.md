@@ -2,6 +2,15 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-02-16
+- Updated default theme colors to a neon style (`#f06d9a`, `#6cc7ef`, `#232531`) for panel and config.
+- Added dedicated neon glow variables (`--primary-glow`, `--accent-glow`, `--header-glow`, `--footer-glow`) and applied them across header/footer/cards/tabs.
+- Tuned default surface colors for panel, stamp, header, and footer to improve contrast on dark background.
+- Increased default `glowIntensity` from `12` to `20` and aligned config default control values.
+- Improved inactive tab styling to auto-adapt for both light and dark custom themes.
+- Updated header/footer gradients and borders to auto-adapt for light/dark custom colors.
+- Updated footer layout to single-line alignment: left `EmoteDeck Panel`, right `Developed by ksmksks` (with Twitch link).
+
 ## [0.1.3] - 2026-02-16
 - Improved drag-and-drop sorting for stamps in the config preview.
 - Fixed animated emote rendering by using Helix `template` + `format=animated`.

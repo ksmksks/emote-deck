@@ -1,19 +1,43 @@
 :root {
-  --primary: #e56aa6;
-  --accent: #ffc8dd;
-  --background: #fff7fb;
-  --text-color: #1f2330;
-  --header-bg: #e56aa6;
-  --footer-bg: #e56aa6;
-  --header-text: #ffffff;
-  --footer-text: #ffffff;
-  --panel-bg: #ffffff;
-  --stamp-bg: #fff0f6;
-  --panel-text: #1f2330;
-  --stamp-text: #1f2330;
+  --primary: #f06d9a;
+  --accent: #6cc7ef;
+  --background: #232531;
+  --text-color: #e4e8f6;
+  --header-bg: #1b3f5f;
+  --footer-bg: #4a2746;
+  --header-text: #f4f6ff;
+  --footer-text: #f4f6ff;
+  --panel-bg: #101626;
+  --stamp-bg: #141d31;
+  --panel-text: #f0f3ff;
+  --stamp-text: #f0f3ff;
   --radius: 12px;
-  --glow: 12px;
-  --glow-color: rgba(229, 106, 166, 0.35);
+  --glow: 20px;
+  --glow-color: rgba(108, 199, 239, 0.34);
+  --primary-glow: rgba(240, 109, 154, 0.45);
+  --accent-glow: rgba(108, 199, 239, 0.42);
+  --primary-soft: rgba(240, 109, 154, 0.24);
+  --accent-soft: rgba(108, 199, 239, 0.2);
+  --tab-border: var(--accent-soft);
+  --tab-text: #eef6ff;
+  --tab-bg-start: var(--accent-soft);
+  --tab-bg-mid: rgba(20, 29, 49, 0.9);
+  --tab-bg-end: var(--primary-soft);
+  --tab-shadow: var(--accent-soft);
+  --tab-hover-mid: rgba(20, 29, 49, 0.82);
+  --tab-hover-shadow: var(--accent-glow);
+  --tab-inner-ring: rgba(255, 255, 255, 0.06);
+  --tab-active-text: #f8fbff;
+  --header-grad-start: #1b3f5f;
+  --header-grad-end: #16324b;
+  --footer-grad-start: #4a2746;
+  --footer-grad-end: #3f223c;
+  --header-border-color: var(--accent-glow);
+  --footer-border-color: var(--primary-glow);
+  --header-inner-ring: rgba(255, 255, 255, 0.08);
+  --footer-inner-ring: rgba(255, 255, 255, 0.08);
+  --header-glow: rgba(27, 63, 95, 0.38);
+  --footer-glow: rgba(74, 39, 70, 0.38);
 }
 
 * {
@@ -30,9 +54,9 @@ body {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(80% 60% at 0% 0%, rgba(255, 255, 255, 0.2), transparent 55%),
-    radial-gradient(80% 60% at 100% 0%, rgba(255, 255, 255, 0.08), transparent 45%),
-    #0b1020;
+    radial-gradient(75% 55% at 8% 10%, rgba(240, 109, 154, 0.22), transparent 58%),
+    radial-gradient(70% 55% at 92% 8%, rgba(108, 199, 239, 0.2), transparent 55%),
+    #111624;
   color: #ecf2ff;
   font-family: "Trebuchet MS", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
   padding: 16px;
@@ -280,11 +304,12 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border: 1px solid rgba(31, 35, 48, 0.16);
+  border: 1px solid var(--accent-glow);
   border-radius: calc(var(--radius) + 2px);
   background: var(--panel-bg);
   color: var(--panel-text);
   overflow: hidden;
+  box-shadow: 0 0 calc(var(--glow) * 0.6) var(--accent-glow);
   animation: shell-in 420ms cubic-bezier(.2, .7, .2, 1) both;
 }
 
@@ -304,8 +329,12 @@ body {
   padding: 8px 10px;
   margin: 0;
   border-radius: calc(var(--radius) - 2px);
-  background: var(--header-bg);
+  background: linear-gradient(130deg, var(--header-grad-start), var(--header-grad-end));
   color: var(--header-text);
+  border: 1px solid var(--header-border-color);
+  box-shadow:
+    inset 0 0 0 1px var(--header-inner-ring),
+    0 0 calc(var(--glow) * 0.6) var(--header-glow);
 }
 
 .ed-title {
@@ -327,20 +356,34 @@ body {
 }
 
 .ed-tab {
-  border: 1px solid rgba(31, 35, 48, 0.22);
+  border: 1px solid var(--tab-border);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.78);
-  color: var(--text-color);
+  background: linear-gradient(140deg, var(--tab-bg-start) 0%, var(--tab-bg-mid) 52%, var(--tab-bg-end) 100%);
+  color: var(--tab-text);
   padding: 7px 6px;
   font-size: 11px;
   cursor: pointer;
   animation: rise-in 340ms ease both;
+  box-shadow:
+    inset 0 0 0 1px var(--tab-inner-ring),
+    0 0 calc(var(--glow) * 0.18) var(--tab-shadow);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.ed-tab:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: linear-gradient(140deg, var(--tab-bg-start) 0%, var(--tab-hover-mid) 50%, var(--tab-bg-end) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 calc(var(--glow) * 0.28) var(--tab-hover-shadow);
 }
 
 .ed-tab.is-active {
-  background: linear-gradient(120deg, var(--primary), rgba(255, 255, 255, 0.28));
+  background: linear-gradient(120deg, var(--primary), var(--accent));
   border-color: var(--accent);
-  color: #1f2330;
+  color: var(--tab-active-text);
+  box-shadow: 0 0 calc(var(--glow) * 0.5) var(--primary-glow);
 }
 
 .section {
@@ -362,7 +405,8 @@ body {
 .ed-tier-title {
   margin: 0 0 6px;
   font-size: 12px;
-  color: #9b355f;
+  color: var(--accent);
+  text-shadow: 0 0 calc(var(--glow) * 0.45) var(--accent-glow);
 }
 
 .ed-tier-title.is-draggable {
@@ -381,13 +425,16 @@ body {
 }
 
 .ed-item {
-  border: 1px solid rgba(31, 35, 48, 0.22);
+  border: 1px solid var(--accent-glow);
   border-radius: var(--radius);
   background: var(--stamp-bg);
   color: var(--stamp-text);
   padding: var(--item-padding, 8px);
   text-align: center;
-  box-shadow: 0 0 var(--glow) var(--glow-color);
+  box-shadow:
+    0 0 calc(var(--glow) * 0.7) var(--glow-color),
+    0 0 calc(var(--glow) * 0.45) var(--primary-glow),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   animation: rise-in 460ms ease both;
 }
 
@@ -433,8 +480,8 @@ body {
   margin: 4px 0 0;
   padding: 12px;
   border-radius: var(--radius);
-  border: 1px dashed rgba(31, 35, 48, 0.28);
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed var(--accent-glow);
+  background: rgba(16, 22, 38, 0.78);
   font-size: 11px;
 }
 
@@ -442,15 +489,47 @@ body {
   padding: 7px 10px;
   margin: 0;
   border-radius: calc(var(--radius) - 2px);
-  background: var(--footer-bg);
+  background: linear-gradient(130deg, var(--footer-grad-start), var(--footer-grad-end));
   color: var(--footer-text);
+  border: 1px solid var(--footer-border-color);
+  box-shadow:
+    inset 0 0 0 1px var(--footer-inner-ring),
+    0 0 calc(var(--glow) * 0.55) var(--footer-glow);
+}
+
+.ed-footer-row {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  white-space: nowrap;
 }
 
 .ed-footer-text {
-  margin: 0;
   font-size: 10px;
   letter-spacing: 0.04em;
-  text-align: center;
+  text-align: left;
+}
+
+.ed-footer-meta {
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+  text-align: right;
+}
+
+.ed-footer-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration-color: currentColor;
+  text-underline-offset: 2px;
+}
+
+.ed-footer-link:hover,
+.ed-footer-link:focus-visible {
+  opacity: 0.9;
 }
 
 @keyframes shell-in {

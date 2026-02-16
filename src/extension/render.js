@@ -11,10 +11,10 @@
     showBitsBadges: true,
     showStampNames: true,
     headerTitle: "EmoteDeck",
-    headerColor: "#e56aa6",
-    footerColor: "#e56aa6",
-    panelBackgroundColor: "#ffffff",
-    stampBackgroundColor: "#fff0f6",
+    headerColor: "#1b3f5f",
+    footerColor: "#4a2746",
+    panelBackgroundColor: "#101626",
+    stampBackgroundColor: "#141d31",
     emoteOrderByTier: {
       "1000": [],
       "2000": [],
@@ -37,11 +37,11 @@
     itemPadding: 10,
     itemGap: 8,
     theme: "custom",
-    primaryColor: "#e56aa6",
-    accentColor: "#ffc8dd",
-    backgroundColor: "#fff7fb",
+    primaryColor: "#f06d9a",
+    accentColor: "#6cc7ef",
+    backgroundColor: "#232531",
     borderRadius: 12,
-    glowIntensity: 12
+    glowIntensity: 20
   };
 
   var THEME_PRESETS = {
@@ -162,18 +162,48 @@
     return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
   }
 
-  function getContrastingTextColor(hex) {
+  function hexToRgb(hex) {
     var normalized = (hex || "").replace("#", "");
     if (normalized.length === 3) {
       normalized = normalized[0] + normalized[0] + normalized[1] + normalized[1] + normalized[2] + normalized[2];
     }
     if (normalized.length !== 6) {
+      return null;
+    }
+    return {
+      r: parseInt(normalized.slice(0, 2), 16),
+      g: parseInt(normalized.slice(2, 4), 16),
+      b: parseInt(normalized.slice(4, 6), 16)
+    };
+  }
+
+  function colorLuma(hex) {
+    var rgb = hexToRgb(hex);
+    if (!rgb) {
+      return null;
+    }
+    return (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  }
+
+  function mixHex(colorA, colorB, amount, alpha) {
+    var a = hexToRgb(colorA);
+    var b = hexToRgb(colorB);
+    if (!a || !b) {
+      return hexToRgba(colorA, typeof alpha === "number" ? alpha : 1);
+    }
+    var t = clamp(Number(amount), 0, 1);
+    var r = Math.round(a.r + (b.r - a.r) * t);
+    var g = Math.round(a.g + (b.g - a.g) * t);
+    var b2 = Math.round(a.b + (b.b - a.b) * t);
+    var a2 = typeof alpha === "number" ? clamp(alpha, 0, 1) : 1;
+    return "rgba(" + r + "," + g + "," + b2 + "," + a2 + ")";
+  }
+
+  function getContrastingTextColor(hex) {
+    var luma = colorLuma(hex);
+    if (luma === null) {
       return "#1f2330";
     }
-    var r = parseInt(normalized.slice(0, 2), 16);
-    var g = parseInt(normalized.slice(2, 4), 16);
-    var b = parseInt(normalized.slice(4, 6), 16);
-    var luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     return luma > 0.62 ? "#1f2330" : "#f8fafc";
   }
 
@@ -297,6 +327,10 @@
     var footerTextColor = getContrastingTextColor(cfg.footerColor);
     var panelTextColor = getContrastingTextColor(cfg.panelBackgroundColor);
     var stampTextColor = getContrastingTextColor(cfg.stampBackgroundColor);
+    var panelIsLight = colorLuma(cfg.panelBackgroundColor) > 0.62;
+    var headerIsLight = colorLuma(cfg.headerColor) > 0.52;
+    var footerIsLight = colorLuma(cfg.footerColor) > 0.52;
+    var activeTextColor = (colorLuma(theme.primary) > 0.62 && colorLuma(theme.accent) > 0.62) ? "#1f2330" : "#f8fbff";
 
     root.style.setProperty("--primary", theme.primary);
     root.style.setProperty("--accent", theme.accent);
@@ -313,6 +347,59 @@
     root.style.setProperty("--radius", cfg.borderRadius + "px");
     root.style.setProperty("--glow", cfg.glowIntensity + "px");
     root.style.setProperty("--glow-color", hexToRgba(theme.accent, 0.35));
+    root.style.setProperty("--primary-glow", hexToRgba(theme.primary, 0.45));
+    root.style.setProperty("--accent-glow", hexToRgba(theme.accent, 0.42));
+    root.style.setProperty("--primary-soft", hexToRgba(theme.primary, 0.24));
+    root.style.setProperty("--accent-soft", hexToRgba(theme.accent, 0.2));
+    root.style.setProperty("--header-glow", hexToRgba(cfg.headerColor, 0.38));
+    root.style.setProperty("--footer-glow", hexToRgba(cfg.footerColor, 0.38));
+    root.style.setProperty("--tab-active-text", activeTextColor);
+
+    if (headerIsLight) {
+      root.style.setProperty("--header-grad-start", mixHex(cfg.headerColor, "#ffffff", 0.06, 1));
+      root.style.setProperty("--header-grad-end", mixHex(cfg.headerColor, "#ffffff", 0.32, 1));
+      root.style.setProperty("--header-border-color", hexToRgba(theme.accent, 0.45));
+      root.style.setProperty("--header-inner-ring", "rgba(255,255,255,0.34)");
+    } else {
+      root.style.setProperty("--header-grad-start", mixHex(cfg.headerColor, "#000000", 0.03, 1));
+      root.style.setProperty("--header-grad-end", mixHex(cfg.headerColor, "#000000", 0.24, 1));
+      root.style.setProperty("--header-border-color", "var(--accent-glow)");
+      root.style.setProperty("--header-inner-ring", "rgba(255,255,255,0.08)");
+    }
+
+    if (footerIsLight) {
+      root.style.setProperty("--footer-grad-start", mixHex(cfg.footerColor, "#ffffff", 0.05, 1));
+      root.style.setProperty("--footer-grad-end", mixHex(cfg.footerColor, "#ffffff", 0.3, 1));
+      root.style.setProperty("--footer-border-color", hexToRgba(theme.primary, 0.45));
+      root.style.setProperty("--footer-inner-ring", "rgba(255,255,255,0.32)");
+    } else {
+      root.style.setProperty("--footer-grad-start", mixHex(cfg.footerColor, "#000000", 0.03, 1));
+      root.style.setProperty("--footer-grad-end", mixHex(cfg.footerColor, "#000000", 0.24, 1));
+      root.style.setProperty("--footer-border-color", "var(--primary-glow)");
+      root.style.setProperty("--footer-inner-ring", "rgba(255,255,255,0.08)");
+    }
+
+    if (panelIsLight) {
+      root.style.setProperty("--tab-border", hexToRgba(theme.primary, 0.3));
+      root.style.setProperty("--tab-text", "#273147");
+      root.style.setProperty("--tab-bg-start", hexToRgba(theme.accent, 0.24));
+      root.style.setProperty("--tab-bg-mid", "rgba(255,255,255,0.9)");
+      root.style.setProperty("--tab-bg-end", hexToRgba(theme.primary, 0.2));
+      root.style.setProperty("--tab-shadow", hexToRgba(theme.primary, 0.16));
+      root.style.setProperty("--tab-hover-mid", "rgba(255,255,255,0.98)");
+      root.style.setProperty("--tab-hover-shadow", hexToRgba(theme.accent, 0.32));
+      root.style.setProperty("--tab-inner-ring", "rgba(31,35,48,0.08)");
+    } else {
+      root.style.setProperty("--tab-border", "var(--accent-soft)");
+      root.style.setProperty("--tab-text", "#eef6ff");
+      root.style.setProperty("--tab-bg-start", "var(--accent-soft)");
+      root.style.setProperty("--tab-bg-mid", "rgba(20,29,49,0.9)");
+      root.style.setProperty("--tab-bg-end", "var(--primary-soft)");
+      root.style.setProperty("--tab-shadow", "var(--accent-soft)");
+      root.style.setProperty("--tab-hover-mid", "rgba(20,29,49,0.82)");
+      root.style.setProperty("--tab-hover-shadow", "var(--accent-glow)");
+      root.style.setProperty("--tab-inner-ring", "rgba(255,255,255,0.06)");
+    }
   }
 
   function getEnabledTabs(cfg) {
@@ -661,6 +748,12 @@
     container.style.setProperty("--item-gap", cfg.itemGap + "px");
     container.style.setProperty("--item-frame-size", layout.frameSize + "px");
     container.style.setProperty("--label-space", cfg.showStampNames ? "30px" : "6px");
+    var footerHtml = '<footer class="ed-footer">' +
+      '<p class="ed-footer-row">' +
+      '<span class="ed-footer-text">EmoteDeck Panel</span>' +
+      '<span class="ed-footer-meta">Developed by <a class="ed-footer-link" href="https://www.twitch.tv/ksmksks" target="_blank" rel="noopener noreferrer">ksmksks</a></span>' +
+      "</p>" +
+      "</footer>";
 
     var tabs = getEnabledTabs(cfg);
     if (!tabs.length) {
@@ -669,7 +762,7 @@
         '<h2 class="ed-title">' + escapeHtml(cfg.headerTitle) + "</h2>" +
         "</header>" +
         '<section class="section" data-ed-panel="active">' + renderEmptyState("All categories are OFF. Enable at least one in Config.") + "</section>" +
-        '<footer class="ed-footer"><p class="ed-footer-text">EmoteDeck Panel</p></footer>' +
+        footerHtml +
         "</section>";
       return;
     }
@@ -696,7 +789,7 @@
       }).join("") +
       "</nav>" +
       '<section class="section" data-ed-panel="active">' + panelHtml + "</section>" +
-      '<footer class="ed-footer"><p class="ed-footer-text">EmoteDeck Panel</p></footer>' +
+      footerHtml +
       "</section>";
 
     Array.prototype.forEach.call(container.querySelectorAll("[data-ed-tab]"), function (button) {
