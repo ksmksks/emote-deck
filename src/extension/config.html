@@ -38,48 +38,79 @@
             <legend>Visibility</legend>
             <label class="control checkbox">
               <input id="showEmotes" type="checkbox" checked>
-              <span>showEmotes</span>
+              <span>Stamps</span>
             </label>
+
+            <div id="emoteVisibilityChildren" class="visibility-children">
+              <label class="control checkbox checkbox-child">
+                <input id="showFollowerStamps" type="checkbox" checked>
+                <span>Follower</span>
+              </label>
+
+              <label class="control checkbox checkbox-child">
+                <input id="showTier1000" type="checkbox" checked>
+                <span>Tier 1</span>
+              </label>
+
+              <label class="control checkbox checkbox-child">
+                <input id="showTier2000" type="checkbox" checked>
+                <span>Tier 2</span>
+              </label>
+
+              <label class="control checkbox checkbox-child">
+                <input id="showTier3000" type="checkbox" checked>
+                <span>Tier 3</span>
+              </label>
+            </div>
 
             <label class="control checkbox">
               <input id="showSubBadges" type="checkbox" checked>
-              <span>showSubBadges</span>
+              <span>Subscriber Badges</span>
             </label>
 
             <label class="control checkbox">
               <input id="showBitsBadges" type="checkbox" checked>
-              <span>showBitsBadges</span>
+              <span>Bits Badges</span>
             </label>
 
             <label class="control checkbox">
               <input id="showStampNames" type="checkbox" checked>
-              <span>showStampNames</span>
+              <span>Stamp Names</span>
             </label>
           </fieldset>
 
           <fieldset class="control-group">
             <legend>Layout</legend>
             <label class="control">
-              <span>tierOrder</span>
-              <select id="tierOrder">
-                <option value="asc">Tier 1 -> Tier 3</option>
-                <option value="desc">Tier 3 -> Tier 1</option>
-              </select>
-            </label>
-
-            <label class="control">
               <span>columns</span>
               <div class="range-wrap">
-                <input id="columns" type="range" min="2" max="5" step="1" value="3">
+                <input id="columns" type="range" min="1" max="8" step="1" value="3">
                 <output id="columnsValue">3</output>
+              </div>
+            </label>
+            <p class="control-note">Columns are auto-adjusted to avoid overlap when stamp size is large.</p>
+
+            <label class="control">
+              <span>emoteSize (%)</span>
+              <div class="range-wrap">
+                <input id="emoteSize" type="range" min="40" max="100" step="1" value="84">
+                <output id="emoteSizeValue">84%</output>
               </div>
             </label>
 
             <label class="control">
-              <span>emoteSize</span>
+              <span>stampInnerPadding</span>
               <div class="range-wrap">
-                <input id="emoteSize" type="range" min="32" max="112" step="2" value="52">
-                <output id="emoteSizeValue">52</output>
+                <input id="itemPadding" type="range" min="0" max="24" step="1" value="10">
+                <output id="itemPaddingValue">10</output>
+              </div>
+            </label>
+
+            <label class="control">
+              <span>stampGap</span>
+              <div class="range-wrap">
+                <input id="itemGap" type="range" min="0" max="24" step="1" value="8">
+                <output id="itemGapValue">8</output>
               </div>
             </label>
           </fieldset>
@@ -140,6 +171,12 @@
                 <output id="glowIntensityValue">12</output>
               </div>
             </label>
+          </fieldset>
+
+          <fieldset class="control-group">
+            <legend>Stamp Visibility</legend>
+            <p class="stamp-toggle-note">Use checkboxes below to control each stamp individually.</p>
+            <div id="stampToggleList" class="stamp-toggle-list"></div>
           </fieldset>
         </form>
 

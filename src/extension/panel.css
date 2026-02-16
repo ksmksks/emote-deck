@@ -29,25 +29,21 @@ body {
 
 body {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 10px;
+  display: block;
+  padding: 0;
   padding-bottom: env(safe-area-inset-bottom);
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  padding-bottom: calc(env(safe-area-inset-bottom));
   color: var(--text-color);
-  background:
-    radial-gradient(140% 120% at 0% 0%, rgba(255, 255, 255, 0.14), transparent 45%),
-    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.08), transparent 38%),
-    var(--background);
+  background: transparent;
   font-family: "Trebuchet MS", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
 }
 
 #panel-root {
-  width: min(100%, 300px);
+  width: 100%;
 }
 
 .status {
+  display: none;
   margin: 0 0 8px;
   padding: 8px 10px;
   border: 1px solid rgba(31, 35, 48, 0.18);
@@ -62,17 +58,17 @@ body {
 }
 
 .ed-shell {
-  width: min(100%, 300px);
+  width: 100%;
   min-height: 500px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border: 1px solid rgba(31, 35, 48, 0.16);
-  border-radius: calc(var(--radius) + 2px);
+  border: 0;
+  border-radius: 0;
   background: var(--panel-bg);
   color: var(--panel-text);
-  backdrop-filter: blur(4px);
+  backdrop-filter: none;
   overflow: hidden;
   animation: shell-in 420ms cubic-bezier(.2, .7, .2, 1) both;
 }
@@ -148,13 +144,19 @@ body {
   color: #9b355f;
 }
 
+.ed-tier-title.is-draggable {
+  cursor: grab;
+  user-select: none;
+}
+
 .ed-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(var(--effective-columns, var(--columns, 3)), minmax(var(--item-frame-size, 72px), 1fr));
+  gap: var(--item-gap, 8px);
   width: 100%;
   margin: 0;
+  align-items: start;
 }
 
 .ed-item {
@@ -179,8 +181,9 @@ body {
 
 .ed-item--emote {
   min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--label-space, 30px));
-  min-width: min(100%, var(--item-frame-size, 72px));
-  justify-self: center;
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
 }
 
 .ed-item--badge {
@@ -188,8 +191,8 @@ body {
 }
 
 .ed-image {
-  width: var(--emote-size, 56px);
-  height: var(--emote-size, 56px);
+  width: min(100%, var(--emote-size, 56px));
+  height: min(100%, var(--emote-size, 56px));
   object-fit: contain;
 }
 

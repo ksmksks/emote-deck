@@ -3,6 +3,10 @@
 
   var DEFAULT_CONFIG = {
     showEmotes: true,
+    showFollowerStamps: true,
+    showTier1000: true,
+    showTier2000: true,
+    showTier3000: true,
     showSubBadges: true,
     showBitsBadges: true,
     showStampNames: true,
@@ -16,11 +20,22 @@
       "2000": [],
       "3000": []
     },
+    followerEmoteOrder: [],
     subBadgeOrder: [],
     bitsBadgeOrder: [],
-    tierOrder: "asc",
+    hiddenStampIds: {
+      emotes1000: [],
+      emotes2000: [],
+      emotes3000: [],
+      followerStamps: [],
+      subBadges: [],
+      bitsBadges: []
+    },
+    emoteSectionOrder: ["follower", "1000", "2000", "3000"],
     columns: 3,
-    emoteSize: 52,
+    emoteSize: 84,
+    itemPadding: 10,
+    itemGap: 8,
     theme: "custom",
     primaryColor: "#e56aa6",
     accentColor: "#ffc8dd",
@@ -63,6 +78,11 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function parseIntOrDefault(value, fallback) {
+    var n = parseInt(value, 10);
+    return isNaN(n) ? fallback : n;
+  }
+
   function normalizeIdList(list) {
     if (!Array.isArray(list)) {
       return [];
@@ -86,6 +106,41 @@
       "1000": normalizeIdList(src["1000"]),
       "2000": normalizeIdList(src["2000"]),
       "3000": normalizeIdList(src["3000"])
+    };
+  }
+
+  function normalizeSectionOrder(raw) {
+    var allowed = ["follower", "1000", "2000", "3000"];
+    if (!Array.isArray(raw)) {
+      return allowed.slice();
+    }
+    var seen = Object.create(null);
+    var out = [];
+    raw.forEach(function (item) {
+      var key = String(item || "");
+      if (allowed.indexOf(key) < 0 || seen[key]) {
+        return;
+      }
+      seen[key] = true;
+      out.push(key);
+    });
+    allowed.forEach(function (key) {
+      if (!seen[key]) {
+        out.push(key);
+      }
+    });
+    return out;
+  }
+
+  function normalizeHiddenStampIds(raw) {
+    var src = raw && typeof raw === "object" ? raw : {};
+    return {
+      emotes1000: normalizeIdList(src.emotes1000),
+      emotes2000: normalizeIdList(src.emotes2000),
+      emotes3000: normalizeIdList(src.emotes3000),
+      followerStamps: normalizeIdList(src.followerStamps),
+      subBadges: normalizeIdList(src.subBadges),
+      bitsBadges: normalizeIdList(src.bitsBadges)
     };
   }
 
@@ -135,16 +190,21 @@
     var cfg = Object.assign({}, DEFAULT_CONFIG, rawConfig || {});
 
     cfg.showEmotes = cfg.showEmotes !== false;
+    cfg.showFollowerStamps = cfg.showFollowerStamps !== false;
+    cfg.showTier1000 = cfg.showTier1000 !== false;
+    cfg.showTier2000 = cfg.showTier2000 !== false;
+    cfg.showTier3000 = cfg.showTier3000 !== false;
     cfg.showSubBadges = cfg.showSubBadges !== false;
     cfg.showBitsBadges = cfg.showBitsBadges !== false;
     cfg.showStampNames = cfg.showStampNames !== false;
     cfg.headerTitle = String(cfg.headerTitle || DEFAULT_CONFIG.headerTitle).trim().slice(0, 48) || DEFAULT_CONFIG.headerTitle;
 
-    cfg.tierOrder = cfg.tierOrder === "desc" ? "desc" : "asc";
-    cfg.columns = clamp(parseInt(cfg.columns, 10) || DEFAULT_CONFIG.columns, 2, 5);
-    cfg.emoteSize = clamp(parseInt(cfg.emoteSize, 10) || DEFAULT_CONFIG.emoteSize, 32, 112);
-    cfg.borderRadius = clamp(parseInt(cfg.borderRadius, 10) || DEFAULT_CONFIG.borderRadius, 0, 24);
-    cfg.glowIntensity = clamp(parseInt(cfg.glowIntensity, 10) || DEFAULT_CONFIG.glowIntensity, 0, 32);
+    cfg.columns = clamp(parseIntOrDefault(cfg.columns, DEFAULT_CONFIG.columns), 1, 8);
+    cfg.emoteSize = clamp(parseIntOrDefault(cfg.emoteSize, DEFAULT_CONFIG.emoteSize), 40, 100);
+    cfg.itemPadding = clamp(parseIntOrDefault(cfg.itemPadding, DEFAULT_CONFIG.itemPadding), 0, 24);
+    cfg.itemGap = clamp(parseIntOrDefault(cfg.itemGap, DEFAULT_CONFIG.itemGap), 0, 24);
+    cfg.borderRadius = clamp(parseIntOrDefault(cfg.borderRadius, DEFAULT_CONFIG.borderRadius), 0, 24);
+    cfg.glowIntensity = clamp(parseIntOrDefault(cfg.glowIntensity, DEFAULT_CONFIG.glowIntensity), 0, 32);
 
     if (!THEME_PRESETS[cfg.theme] && cfg.theme !== "custom") {
       cfg.theme = "custom";
@@ -158,9 +218,19 @@
     cfg.panelBackgroundColor = sanitizeColor(cfg.panelBackgroundColor, DEFAULT_CONFIG.panelBackgroundColor);
     cfg.stampBackgroundColor = sanitizeColor(cfg.stampBackgroundColor, DEFAULT_CONFIG.stampBackgroundColor);
     cfg.emoteOrderByTier = normalizeOrderByTier(cfg.emoteOrderByTier);
+    cfg.emoteSectionOrder = normalizeSectionOrder(cfg.emoteSectionOrder);
+    cfg.followerEmoteOrder = normalizeIdList(cfg.followerEmoteOrder);
     cfg.subBadgeOrder = normalizeIdList(cfg.subBadgeOrder);
     cfg.bitsBadgeOrder = normalizeIdList(cfg.bitsBadgeOrder);
-    cfg.activeTab = ["emotes", "subBadges", "bitsBadges"].indexOf(cfg.activeTab) >= 0 ? cfg.activeTab : "emotes";
+    cfg.hiddenStampIds = normalizeHiddenStampIds(cfg.hiddenStampIds);
+    var normalizedActiveTab = cfg.activeTab;
+    if (normalizedActiveTab === "followerStamps") {
+      normalizedActiveTab = "emotes";
+    }
+    if (normalizedActiveTab === "subBadges" || normalizedActiveTab === "bitsBadges") {
+      normalizedActiveTab = "badges";
+    }
+    cfg.activeTab = ["emotes", "badges"].indexOf(normalizedActiveTab) >= 0 ? normalizedActiveTab : "emotes";
 
     return cfg;
   }
@@ -172,6 +242,7 @@
         "2000": [],
         "3000": []
       },
+      followerEmotes: [],
       subBadges: [],
       bitsBadges: []
     };
@@ -190,10 +261,17 @@
         var tier = String(emote.tier || "");
         if (model.emotesByTier[tier]) {
           model.emotesByTier[tier].push(emote);
+          return;
+        }
+        if (String(emote.emote_type || "").toLowerCase() === "follower") {
+          model.followerEmotes.push(emote);
         }
       });
     }
 
+    if (Array.isArray(rawData.followerEmotes)) {
+      model.followerEmotes = rawData.followerEmotes;
+    }
     model.subBadges = Array.isArray(rawData.subBadges) ? rawData.subBadges : [];
     model.bitsBadges = Array.isArray(rawData.bitsBadges) ? rawData.bitsBadges : [];
     return model;
@@ -240,13 +318,10 @@
   function getEnabledTabs(cfg) {
     var tabs = [];
     if (cfg.showEmotes) {
-      tabs.push({ id: "emotes", label: "Emotes" });
+      tabs.push({ id: "emotes", label: "Stamps" });
     }
-    if (cfg.showSubBadges) {
-      tabs.push({ id: "subBadges", label: "Subscriber Badges" });
-    }
-    if (cfg.showBitsBadges) {
-      tabs.push({ id: "bitsBadges", label: "Bits Badges" });
+    if (cfg.showSubBadges || cfg.showBitsBadges) {
+      tabs.push({ id: "badges", label: "Badges" });
     }
     return tabs;
   }
@@ -265,16 +340,59 @@
     if (emote.format.indexOf("animated") < 0) {
       return "";
     }
-    var themeMode = Array.isArray(emote.theme_mode) && emote.theme_mode.indexOf("dark") >= 0 ? "dark" : "light";
+    var template = String(emote.template)
+      .replace(/%7B/gi, "{")
+      .replace(/%7D/gi, "}");
+    var themeMode = Array.isArray(emote.theme_mode) && emote.theme_mode.indexOf("light") >= 0 ? "light" : "dark";
+    var scale = "3.0";
+    if (Array.isArray(emote.scale) && emote.scale.length) {
+      if (emote.scale.indexOf("3.0") >= 0) {
+        scale = "3.0";
+      } else {
+        scale = emote.scale[emote.scale.length - 1];
+      }
+    }
+    var emoteId = String(emote.id || "").replace(/^\{+|\}+$/g, "");
+    var url = template
+      .replace(/\{\{\s*id\s*\}\}|\{\s*id\s*\}/g, encodeURIComponent(emoteId))
+      // Helix V2 chat emotes use "default" for the animated rendition.
+      .replace(/\{\{\s*format\s*\}\}|\{\s*format\s*\}/g, "default")
+      .replace(/\{\{\s*theme_mode\s*\}\}|\{\s*theme_mode\s*\}/g, themeMode)
+      .replace(/\{\{\s*scale\s*\}\}|\{\s*scale\s*\}/g, scale);
+
+    if (/\{\s*(id|format|theme_mode|scale)\s*\}/.test(url)) {
+      return "";
+    }
+    return url;
+  }
+
+  function buildStaticEmoteUrl(emote) {
+    if (!emote || !emote.template) {
+      return "";
+    }
+    var template = String(emote.template)
+      .replace(/%7B/gi, "{")
+      .replace(/%7D/gi, "}");
+    var emoteId = String(emote.id || "").replace(/^\{+|\}+$/g, "");
+    var themeMode = Array.isArray(emote.theme_mode) && emote.theme_mode.indexOf("light") >= 0 ? "light" : "dark";
     var scale = "3.0";
     if (Array.isArray(emote.scale) && emote.scale.length) {
       scale = emote.scale.indexOf("3.0") >= 0 ? "3.0" : emote.scale[emote.scale.length - 1];
     }
-    return String(emote.template)
-      .replace("{id}", encodeURIComponent(String(emote.id || "")))
-      .replace("{format}", "animated")
-      .replace("{theme_mode}", themeMode)
-      .replace("{scale}", scale);
+
+    var candidateFormats = ["default", "static"];
+    for (var i = 0; i < candidateFormats.length; i += 1) {
+      var format = candidateFormats[i];
+      var url = template
+        .replace(/\{\{\s*id\s*\}\}|\{\s*id\s*\}/g, encodeURIComponent(emoteId))
+        .replace(/\{\{\s*format\s*\}\}|\{\s*format\s*\}/g, format)
+        .replace(/\{\{\s*theme_mode\s*\}\}|\{\s*theme_mode\s*\}/g, themeMode)
+        .replace(/\{\{\s*scale\s*\}\}|\{\s*scale\s*\}/g, scale);
+      if (!/\{\s*(id|format|theme_mode|scale)\s*\}/.test(url)) {
+        return url;
+      }
+    }
+    return "";
   }
 
   function getItemId(item) {
@@ -309,30 +427,119 @@
     });
   }
 
+  function isTierEnabled(cfg, tier) {
+    if (tier === "1000") {
+      return !!cfg.showTier1000;
+    }
+    if (tier === "2000") {
+      return !!cfg.showTier2000;
+    }
+    if (tier === "3000") {
+      return !!cfg.showTier3000;
+    }
+    return true;
+  }
+
+  function getHiddenKey(kind, tier) {
+    if (kind === "emotes") {
+      return "emotes" + String(tier || "");
+    }
+    if (kind === "followerStamps") {
+      return "followerStamps";
+    }
+    if (kind === "subBadges") {
+      return "subBadges";
+    }
+    if (kind === "bitsBadges") {
+      return "bitsBadges";
+    }
+    return "";
+  }
+
+  function isHiddenStamp(cfg, kind, tier, item) {
+    var key = getHiddenKey(kind, tier);
+    if (!key) {
+      return false;
+    }
+    var hidden = (cfg.hiddenStampIds && cfg.hiddenStampIds[key]) || [];
+    var id = getItemId(item);
+    return hidden.indexOf(id) >= 0;
+  }
+
   function renderEmptyState(message) {
     return '<div class="ed-empty">' + escapeHtml(message) + "</div>";
   }
 
   function renderEmotes(model, cfg) {
-    var tierOrder = cfg.tierOrder === "desc" ? ["3000", "2000", "1000"] : ["1000", "2000", "3000"];
     var tierNames = { "1000": "Tier 1", "2000": "Tier 2", "3000": "Tier 3" };
     var html = "";
     var total = 0;
+    var sectionOrder = Array.isArray(cfg.emoteSectionOrder) ? cfg.emoteSectionOrder : ["follower", "1000", "2000", "3000"];
 
-    tierOrder.forEach(function (tier) {
+    sectionOrder.forEach(function (sectionId) {
+      if (sectionId === "follower") {
+        if (!cfg.showFollowerStamps) {
+          return;
+        }
+        var followers = sortByOrder(model.followerEmotes || [], cfg.followerEmoteOrder);
+        followers = followers.filter(function (emote) {
+          return !isHiddenStamp(cfg, "followerStamps", "", emote);
+        });
+        total += followers.length;
+        html += '<section class="ed-tier">';
+        html += '<h3 class="ed-tier-title" data-ed-section-kind="emoteSections" data-ed-section-id="follower">Follower</h3>';
+        if (!followers.length) {
+          html += renderEmptyState("No follower found.");
+        } else {
+          html += '<div class="ed-grid">';
+          followers.forEach(function (emote) {
+            var animatedUrl = buildAnimatedEmoteUrl(emote);
+            var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
+            var imageUrl = animatedUrl || fallbackUrl;
+            var emoteName = escapeHtml(emote.name || emote.id || "follower");
+            html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
+            if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
+              html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
+            } else {
+              html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
+            }
+            if (cfg.showStampNames) {
+              html += '<p class="ed-label">' + emoteName + "</p>";
+            }
+            html += "</article>";
+          });
+          html += "</div>";
+        }
+        html += "</section>";
+        return;
+      }
+
+      var tier = sectionId;
+      if (!isTierEnabled(cfg, tier)) {
+        return;
+      }
       var emotes = sortByOrder(model.emotesByTier[tier] || [], cfg.emoteOrderByTier[tier]);
+      emotes = emotes.filter(function (emote) {
+        return !isHiddenStamp(cfg, "emotes", tier, emote);
+      });
       total += emotes.length;
       html += '<section class="ed-tier">';
-      html += '<h3 class="ed-tier-title">' + tierNames[tier] + "</h3>";
+      html += '<h3 class="ed-tier-title" data-ed-section-kind="emoteSections" data-ed-section-id="' + tier + '">' + tierNames[tier] + "</h3>";
       if (!emotes.length) {
         html += renderEmptyState("No emotes in this tier.");
       } else {
         html += '<div class="ed-grid">';
         emotes.forEach(function (emote) {
-          var imageUrl = buildAnimatedEmoteUrl(emote) || pickImage(emote.images, emote.imageUrl);
+          var animatedUrl = buildAnimatedEmoteUrl(emote);
+          var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
+          var imageUrl = animatedUrl || fallbackUrl;
           var emoteName = escapeHtml(emote.name || emote.id || "emote");
           html += '<article class="ed-item ed-item--emote" data-ed-kind="emotes" data-ed-tier="' + tier + '" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
-          html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
+          if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
+            html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
+          } else {
+            html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
+          }
           if (cfg.showStampNames) {
             html += '<p class="ed-label">' + emoteName + "</p>";
           }
@@ -344,14 +551,47 @@
     });
 
     if (!total) {
-      return renderEmptyState("No subscriber emotes found.");
+      return renderEmptyState("No emotes found.");
     }
+    return html;
+  }
+
+  function renderFollowerEmotes(list, cfg) {
+    var ordered = sortByOrder(list || [], cfg.followerEmoteOrder);
+    ordered = ordered.filter(function (emote) {
+      return !isHiddenStamp(cfg, "followerStamps", "", emote);
+    });
+    if (!ordered.length) {
+      return renderEmptyState("No follower found.");
+    }
+
+    var html = '<div class="ed-grid">';
+    ordered.forEach(function (emote) {
+      var animatedUrl = buildAnimatedEmoteUrl(emote);
+      var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
+      var imageUrl = animatedUrl || fallbackUrl;
+      var emoteName = escapeHtml(emote.name || emote.id || "follower");
+      html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
+      if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
+        html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
+      } else {
+        html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
+      }
+      if (cfg.showStampNames) {
+        html += '<p class="ed-label">' + emoteName + "</p>";
+      }
+      html += "</article>";
+    });
+    html += "</div>";
     return html;
   }
 
   function renderBadges(list, emptyMessage, cfg, badgeKind) {
     var order = badgeKind === "subBadges" ? cfg.subBadgeOrder : cfg.bitsBadgeOrder;
     var ordered = sortByOrder(list, order);
+    ordered = ordered.filter(function (badge) {
+      return !isHiddenStamp(cfg, badgeKind, "", badge);
+    });
 
     if (!ordered.length) {
       return renderEmptyState(emptyMessage);
@@ -376,6 +616,33 @@
     return html;
   }
 
+  function renderBadgesPanel(model, cfg) {
+    var html = "";
+    var hasAnyBadgeSection = false;
+
+    if (cfg.showSubBadges) {
+      hasAnyBadgeSection = true;
+      html += '<section class="ed-tier">';
+      html += '<h3 class="ed-tier-title">Subscriber Badges</h3>';
+      html += renderBadges(model.subBadges, "No subscriber badges found.", cfg, "subBadges");
+      html += "</section>";
+    }
+
+    if (cfg.showBitsBadges) {
+      hasAnyBadgeSection = true;
+      html += '<section class="ed-tier">';
+      html += '<h3 class="ed-tier-title">Bits Badges</h3>';
+      html += renderBadges(model.bitsBadges, "No bits badges found.", cfg, "bitsBadges");
+      html += "</section>";
+    }
+
+    if (!hasAnyBadgeSection) {
+      return renderEmptyState("No badge categories enabled.");
+    }
+
+    return html;
+  }
+
   function render(container, rawData, rawConfig) {
     if (!container) {
       return;
@@ -385,10 +652,14 @@
     var model = normalizeData(rawData);
     applyThemeVariables(cfg);
 
+    var layout = calculateLayoutMetrics(container, cfg);
+
     container.style.setProperty("--columns", String(cfg.columns));
-    container.style.setProperty("--emote-size", cfg.emoteSize + "px");
-    container.style.setProperty("--item-padding", clamp(Math.round(cfg.emoteSize * 0.18), 6, 18) + "px");
-    container.style.setProperty("--item-frame-size", cfg.emoteSize + clamp(Math.round(cfg.emoteSize * 0.18), 6, 18) * 2 + "px");
+    container.style.setProperty("--effective-columns", String(layout.effectiveColumns));
+    container.style.setProperty("--emote-size", layout.imageSize + "px");
+    container.style.setProperty("--item-padding", cfg.itemPadding + "px");
+    container.style.setProperty("--item-gap", cfg.itemGap + "px");
+    container.style.setProperty("--item-frame-size", layout.frameSize + "px");
     container.style.setProperty("--label-space", cfg.showStampNames ? "30px" : "6px");
 
     var tabs = getEnabledTabs(cfg);
@@ -396,7 +667,6 @@
       container.innerHTML = '<section class="ed-shell">' +
         '<header class="ed-header">' +
         '<h2 class="ed-title">' + escapeHtml(cfg.headerTitle) + "</h2>" +
-        '<p class="ed-subtitle">Twitch channel rewards</p>' +
         "</header>" +
         '<section class="section" data-ed-panel="active">' + renderEmptyState("All categories are OFF. Enable at least one in Config.") + "</section>" +
         '<footer class="ed-footer"><p class="ed-footer-text">EmoteDeck Panel</p></footer>' +
@@ -409,16 +679,13 @@
 
     if (activeTab === "emotes") {
       panelHtml = renderEmotes(model, cfg);
-    } else if (activeTab === "subBadges") {
-      panelHtml = renderBadges(model.subBadges, "No subscriber badges found.", cfg, "subBadges");
     } else {
-      panelHtml = renderBadges(model.bitsBadges, "No bits badges found.", cfg, "bitsBadges");
+      panelHtml = renderBadgesPanel(model, cfg);
     }
 
     container.innerHTML = '<section class="ed-shell">' +
       '<header class="ed-header">' +
       '<h2 class="ed-title">' + escapeHtml(cfg.headerTitle) + "</h2>" +
-      '<p class="ed-subtitle">Twitch channel rewards</p>' +
       "</header>" +
       '<nav class="ed-tabs" role="tablist">' +
       tabs.map(function (tab) {
@@ -444,9 +711,48 @@
       });
     });
 
+    Array.prototype.forEach.call(container.querySelectorAll(".ed-image[data-ed-fallback-src]"), function (img) {
+      img.addEventListener("error", function onError() {
+        var fallback = img.getAttribute("data-ed-fallback-src") || "";
+        if (!fallback || img.getAttribute("src") === fallback) {
+          return;
+        }
+        img.setAttribute("src", fallback);
+        img.removeAttribute("data-ed-fallback-src");
+        img.removeEventListener("error", onError);
+      });
+    });
+
     if (cfg.enableDragSort && typeof cfg.onOrderChange === "function") {
       wireDragAndDrop(container, cfg);
     }
+  }
+
+  function calculateEffectiveColumns(container, desiredColumns, minFrameSize, itemGap) {
+    var columns = clamp(parseInt(desiredColumns, 10) || 1, 1, 8);
+    var width = container && container.clientWidth ? container.clientWidth : 300;
+    var shellWidth = Math.min(width, 300);
+    var usableWidth = Math.max(120, shellWidth - 24);
+    var perItem = Math.max(40, minFrameSize);
+    var fit = Math.floor((usableWidth + itemGap) / (perItem + itemGap));
+    return clamp(fit || 1, 1, columns);
+  }
+
+  function calculateLayoutMetrics(container, cfg) {
+    var width = container && container.clientWidth ? container.clientWidth : 300;
+    var shellWidth = Math.min(width, 300);
+    var usableWidth = Math.max(120, shellWidth - 24);
+    var minFrameSize = Math.max(48, cfg.itemPadding * 2 + 34);
+    var effectiveColumns = calculateEffectiveColumns(container, cfg.columns, minFrameSize, cfg.itemGap);
+    var frameSize = Math.floor((usableWidth - cfg.itemGap * (effectiveColumns - 1)) / effectiveColumns);
+    frameSize = Math.max(minFrameSize, frameSize);
+    var inner = Math.max(20, frameSize - cfg.itemPadding * 2 - 2);
+    var imageSize = Math.max(18, Math.floor(inner * (cfg.emoteSize / 100)));
+    return {
+      effectiveColumns: effectiveColumns,
+      frameSize: frameSize,
+      imageSize: imageSize
+    };
   }
 
   function wireDragAndDrop(container, cfg) {
@@ -506,6 +812,54 @@
           kind: dragState.kind,
           tier: dragState.tier,
           fromId: dragState.id,
+          toId: targetId,
+          currentOrder: currentOrder
+        });
+      });
+    });
+
+    var sectionDragState = {
+      id: "",
+      kind: ""
+    };
+
+    Array.prototype.forEach.call(container.querySelectorAll(".ed-tier-title[data-ed-section-kind][data-ed-section-id]"), function (title) {
+      title.setAttribute("draggable", "true");
+      title.classList.add("is-draggable");
+
+      title.addEventListener("dragstart", function (event) {
+        sectionDragState.id = title.getAttribute("data-ed-section-id") || "";
+        sectionDragState.kind = title.getAttribute("data-ed-section-kind") || "";
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", sectionDragState.id);
+        }
+      });
+
+      title.addEventListener("dragover", function (event) {
+        event.preventDefault();
+      });
+
+      title.addEventListener("drop", function (event) {
+        event.preventDefault();
+        var targetId = title.getAttribute("data-ed-section-id") || "";
+        var targetKind = title.getAttribute("data-ed-section-kind") || "";
+        if (!sectionDragState.id || !targetId || sectionDragState.id === targetId) {
+          return;
+        }
+        if (sectionDragState.kind !== targetKind) {
+          return;
+        }
+
+        var selector = '.ed-tier-title[data-ed-section-kind="' + targetKind + '"]';
+        var currentOrder = Array.prototype.map.call(
+          container.querySelectorAll(selector),
+          function (node) { return node.getAttribute("data-ed-section-id") || ""; }
+        ).filter(function (id) { return !!id; });
+
+        cfg.onOrderChange({
+          kind: "emoteSections",
+          fromId: sectionDragState.id,
           toId: targetId,
           currentOrder: currentOrder
         });

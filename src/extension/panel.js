@@ -15,31 +15,42 @@
     auth: null,
     data: createDemoData(),
     config: Object.assign({}, RENDER.defaults),
-    activeTab: "emotes"
+    activeTab: "emotes",
+    showInfoStatus: false
   };
 
-  function setStatus(message, isError) {
+  function setStatus(message, isError, forceShow) {
     statusElement.textContent = message;
     statusElement.classList.toggle("is-error", !!isError);
+    var visible = !!isError || !!forceShow;
+    statusElement.style.display = visible && message ? "block" : "none";
   }
 
   function getPersistedKeys(config) {
     return {
       showEmotes: config.showEmotes,
+      showFollowerStamps: config.showFollowerStamps,
+      showTier1000: config.showTier1000,
+      showTier2000: config.showTier2000,
+      showTier3000: config.showTier3000,
       showSubBadges: config.showSubBadges,
       showBitsBadges: config.showBitsBadges,
       showStampNames: config.showStampNames,
+      hiddenStampIds: config.hiddenStampIds,
       headerTitle: config.headerTitle,
       headerColor: config.headerColor,
       footerColor: config.footerColor,
       panelBackgroundColor: config.panelBackgroundColor,
       stampBackgroundColor: config.stampBackgroundColor,
       emoteOrderByTier: config.emoteOrderByTier,
+      followerEmoteOrder: config.followerEmoteOrder,
       subBadgeOrder: config.subBadgeOrder,
       bitsBadgeOrder: config.bitsBadgeOrder,
-      tierOrder: config.tierOrder,
+      emoteSectionOrder: config.emoteSectionOrder,
       columns: config.columns,
       emoteSize: config.emoteSize,
+      itemPadding: config.itemPadding,
+      itemGap: config.itemGap,
       theme: config.theme,
       primaryColor: config.primaryColor,
       accentColor: config.accentColor,
@@ -106,25 +117,41 @@
     return response.json();
   }
 
-  function normalizeEmotes(items, responseTemplate) {
+  function toArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function normalizeEmotes(items, responseMeta) {
+    var responseTemplate = responseMeta && responseMeta.template ? responseMeta.template : "";
+    var responseFormat = toArray(responseMeta && (responseMeta.format || responseMeta.formats));
+    var responseScale = toArray(responseMeta && (responseMeta.scale || responseMeta.scales));
+    var responseThemeMode = toArray(responseMeta && (responseMeta.theme_mode || responseMeta.theme_modes));
     var grouped = { "1000": [], "2000": [], "3000": [] };
+    var follower = [];
     (items || []).forEach(function (emote) {
       var tier = String(emote.tier || "");
-      if (!grouped[tier]) {
-        return;
-      }
-      grouped[tier].push({
+      var normalized = {
         id: emote.id,
         name: emote.name,
         tier: tier,
         images: emote.images || {},
-        format: emote.format || [],
-        scale: emote.scale || [],
-        theme_mode: emote.theme_mode || [],
+        format: toArray(emote.format).length ? toArray(emote.format) : responseFormat,
+        scale: toArray(emote.scale).length ? toArray(emote.scale) : responseScale,
+        theme_mode: toArray(emote.theme_mode).length ? toArray(emote.theme_mode) : responseThemeMode,
         template: emote.template || responseTemplate || ""
-      });
+      };
+      if (grouped[tier]) {
+        grouped[tier].push(normalized);
+        return;
+      }
+      if (String(emote.emote_type || "").toLowerCase() === "follower") {
+        follower.push(normalized);
+      }
     });
-    return grouped;
+    return {
+      emotesByTier: grouped,
+      followerEmotes: follower
+    };
   }
 
   function normalizeBadges(items) {
@@ -161,10 +188,12 @@
   async function fetchAllData() {
     var emotesResponse = await callHelix("/chat/emotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
+    var normalizedEmotes = normalizeEmotes(emotesResponse.data, emotesResponse);
     var badges = normalizeBadges(badgesResponse.data);
 
     state.data = {
-      emotesByTier: normalizeEmotes(emotesResponse.data, emotesResponse.template),
+      emotesByTier: normalizedEmotes.emotesByTier,
+      followerEmotes: normalizedEmotes.followerEmotes,
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
     };
@@ -190,6 +219,11 @@
           { id: "demo-halo", name: "DemoHalo", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_97de78f7df784c6ab8e8d0ca4a3f2d4c/default/light/3.0" } }
         ]
       },
+      followerEmotes: [
+        { id: "follower-wave", name: "FollowerWave", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } },
+        { id: "follower-heart", name: "FollowerHeart", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_df1d47f73ab14f2a8f53951f2f8f4e97/default/light/3.0" } },
+        { id: "follower-hype", name: "FollowerHype", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_71c6ef73d2eb44f39e192f4ca6aeb4c0/default/light/3.0" } }
+      ],
       subBadges: [
         { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9ba38fd3-bfae-4f87-bd25-4f6c4ddf3f2f/3" },
         { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9550e168-8ccf-4fae-b2d0-11a3f53b829d/3" },
@@ -205,10 +239,14 @@
 
   async function initTwitchFlow() {
     if (!window.Twitch || !window.Twitch.ext) {
-      setStatus("Running in demo mode outside Twitch.", false);
+      state.showInfoStatus = true;
+      setStatus("Running in demo mode outside Twitch.", false, true);
       renderPanel();
       return;
     }
+
+    state.showInfoStatus = false;
+    setStatus("", false);
 
     if (window.Twitch.ext.configuration && window.Twitch.ext.configuration.onChanged) {
       window.Twitch.ext.configuration.onChanged(function () {
@@ -219,13 +257,13 @@
 
     window.Twitch.ext.onAuthorized(async function (auth) {
       state.auth = auth;
-      setStatus("Loading from Helix API...", false);
+      setStatus("Loading from Helix API...", false, state.showInfoStatus);
 
       try {
         state.config = readConfigFromTwitch();
         state.config = RENDER.normalizeConfig(getPersistedKeys(state.config));
         await fetchAllData();
-        setStatus("Updated.", false);
+        setStatus("Updated.", false, state.showInfoStatus);
       } catch (error) {
         setStatus(error.message || "Failed to load data.", true);
       }
@@ -233,6 +271,10 @@
       renderPanel();
     });
   }
+
+  window.addEventListener("resize", function () {
+    renderPanel();
+  });
 
   initTwitchFlow();
 })();
