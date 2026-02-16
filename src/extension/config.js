@@ -23,13 +23,15 @@
     "subBadgeOrder",
     "bitsBadgeOrder",
     "showEmotes",
+    "showBadges",
     "showFollowerStamps",
     "showTier1000",
     "showTier2000",
     "showTier3000",
     "showSubBadges",
     "showBitsBadges",
-    "showStampNames",
+    "showEmoteNames",
+    "showBadgeNames",
     "hiddenStampIds",
     "emoteSectionOrder",
     "columns",
@@ -51,14 +53,17 @@
     panelBackgroundColor: document.getElementById("panelBackgroundColor"),
     stampBackgroundColor: document.getElementById("stampBackgroundColor"),
     showEmotes: document.getElementById("showEmotes"),
+    showBadges: document.getElementById("showBadges"),
     showFollowerStamps: document.getElementById("showFollowerStamps"),
     showTier1000: document.getElementById("showTier1000"),
     showTier2000: document.getElementById("showTier2000"),
     showTier3000: document.getElementById("showTier3000"),
     emoteVisibilityChildren: document.getElementById("emoteVisibilityChildren"),
+    badgesVisibilityChildren: document.getElementById("badgesVisibilityChildren"),
     showSubBadges: document.getElementById("showSubBadges"),
     showBitsBadges: document.getElementById("showBitsBadges"),
-    showStampNames: document.getElementById("showStampNames"),
+    showEmoteNames: document.getElementById("showEmoteNames"),
+    showBadgeNames: document.getElementById("showBadgeNames"),
     stampToggleList: document.getElementById("stampToggleList"),
     columns: document.getElementById("columns"),
     emoteSize: document.getElementById("emoteSize"),
@@ -86,7 +91,8 @@
     data: createDemoData(),
     activeTab: "emotes",
     saveTimer: null,
-    pendingRemoteSave: false
+    pendingRemoteSave: false,
+    maxColumnsFit: 8
   };
 
   function setStatus(message, isError) {
@@ -123,7 +129,9 @@
   }
 
   function syncRangeLabels() {
-    controls.columnsValue.textContent = controls.columns.value;
+    var currentColumns = parseInt(controls.columns.value, 10) || 1;
+    var maxColumns = parseInt(controls.columns.max, 10) || 8;
+    controls.columnsValue.textContent = maxColumns < 8 ? (currentColumns + " / " + maxColumns) : String(currentColumns);
     controls.emoteSizeValue.textContent = controls.emoteSize.value + "%";
     controls.itemPaddingValue.textContent = controls.itemPadding.value;
     controls.itemGapValue.textContent = controls.itemGap.value;
@@ -138,13 +146,16 @@
     controls.panelBackgroundColor.value = config.panelBackgroundColor;
     controls.stampBackgroundColor.value = config.stampBackgroundColor;
     controls.showEmotes.checked = !!config.showEmotes;
+    controls.showBadges.checked = !!config.showBadges;
     controls.showFollowerStamps.checked = !!config.showFollowerStamps;
     controls.showTier1000.checked = !!config.showTier1000;
     controls.showTier2000.checked = !!config.showTier2000;
     controls.showTier3000.checked = !!config.showTier3000;
     controls.showSubBadges.checked = !!config.showSubBadges;
     controls.showBitsBadges.checked = !!config.showBitsBadges;
-    controls.showStampNames.checked = !!config.showStampNames;
+    controls.showEmoteNames.checked = !!config.showEmoteNames;
+    controls.showBadgeNames.checked = !!config.showBadgeNames;
+    controls.columns.max = "8";
     controls.columns.value = String(config.columns);
     controls.emoteSize.value = String(config.emoteSize);
     controls.itemPadding.value = String(config.itemPadding);
@@ -167,13 +178,15 @@
       panelBackgroundColor: controls.panelBackgroundColor.value,
       stampBackgroundColor: controls.stampBackgroundColor.value,
       showEmotes: controls.showEmotes.checked,
+      showBadges: controls.showBadges.checked,
       showFollowerStamps: controls.showFollowerStamps.checked,
       showTier1000: controls.showTier1000.checked,
       showTier2000: controls.showTier2000.checked,
       showTier3000: controls.showTier3000.checked,
       showSubBadges: controls.showSubBadges.checked,
       showBitsBadges: controls.showBitsBadges.checked,
-      showStampNames: controls.showStampNames.checked,
+      showEmoteNames: controls.showEmoteNames.checked,
+      showBadgeNames: controls.showBadgeNames.checked,
       columns: parseInt(controls.columns.value, 10),
       emoteSize: parseInt(controls.emoteSize.value, 10),
       itemPadding: parseInt(controls.itemPadding.value, 10),
@@ -203,40 +216,85 @@
   }
 
   function renderPreview() {
-    var configForRender = Object.assign({}, state.config, {
-      activeTab: state.activeTab,
-      enableDragSort: true,
-      onTabChange: function (nextTab) {
-        state.activeTab = nextTab;
-        renderPreview();
-      },
-      onOrderChange: function (payload) {
-        applyOrderChange(payload);
-        renderPreview();
-        scheduleSave();
+    function createRenderConfig() {
+      return Object.assign({}, state.config, {
+        activeTab: state.activeTab,
+        enableDragSort: true,
+        onTabChange: function (nextTab) {
+          state.activeTab = nextTab;
+          renderPreview();
+        },
+        onOrderChange: function (payload) {
+          applyOrderChange(payload);
+          renderPreview();
+          scheduleSave();
+        }
+      });
+    }
+
+    function syncColumnsConstraintFromPreview() {
+      var rawFit = previewElement && previewElement.style ? previewElement.style.getPropertyValue("--max-columns-fit") : "";
+      var fit = parseInt(rawFit, 10);
+      if (!fit || isNaN(fit)) {
+        fit = 8;
       }
-    });
+      fit = Math.max(1, Math.min(8, fit));
+      state.maxColumnsFit = fit;
+      controls.columns.max = String(fit);
+      var current = parseInt(controls.columns.value, 10) || 1;
+      if (current > fit) {
+        controls.columns.value = String(fit);
+        state.config = RENDER.normalizeConfig(Object.assign({}, state.config, { columns: fit }));
+        return true;
+      }
+      return false;
+    }
+
+    var configForRender = createRenderConfig();
     RENDER.render(previewElement, state.data, configForRender);
+    if (syncColumnsConstraintFromPreview()) {
+      RENDER.render(previewElement, state.data, createRenderConfig());
+      syncColumnsConstraintFromPreview();
+    }
+    syncRangeLabels();
     renderStampToggleList();
   }
 
   function syncVisibilityControls() {
-    var enabled = !!controls.showEmotes.checked;
-    var children = [
+    var emotesEnabled = !!controls.showEmotes.checked;
+    var emoteChildren = [
       controls.showFollowerStamps,
       controls.showTier1000,
       controls.showTier2000,
-      controls.showTier3000
+      controls.showTier3000,
+      controls.showEmoteNames
     ];
 
-    children.forEach(function (input) {
+    emoteChildren.forEach(function (input) {
       if (input) {
-        input.disabled = !enabled;
+        input.disabled = !emotesEnabled;
       }
     });
 
     if (controls.emoteVisibilityChildren) {
-      controls.emoteVisibilityChildren.classList.toggle("is-disabled", !enabled);
+      controls.emoteVisibilityChildren.classList.toggle("is-disabled", !emotesEnabled);
+    }
+
+    var badgesEnabled = !!controls.showBadges.checked;
+    var badgeChildren = [
+      controls.showSubBadges,
+      controls.showBitsBadges,
+      controls.showBadgeNames
+    ];
+
+    badgeChildren.forEach(function (input) {
+      if (input) {
+        input.disabled = !badgesEnabled;
+      }
+    });
+
+    if (controls.badgesVisibilityChildren) {
+      controls.badgesVisibilityChildren.classList.toggle("is-disabled", !badgesEnabled);
     }
   }
 
@@ -310,8 +368,14 @@
       });
     }
 
-    groups.push(toToggleGroup("Subscriber Badges", model.subBadges || [], "subBadges", ""));
-    groups.push(toToggleGroup("Bits Badges", model.bitsBadges || [], "bitsBadges", ""));
+    if (state.config.showBadges) {
+      if (state.config.showSubBadges) {
+        groups.push(toToggleGroup("Subscriber Badges", model.subBadges || [], "subBadges", ""));
+      }
+      if (state.config.showBitsBadges) {
+        groups.push(toToggleGroup("Bits Badges", model.bitsBadges || [], "bitsBadges", ""));
+      }
+    }
 
     var html = groups.filter(Boolean).join("");
     controls.stampToggleList.innerHTML = html || '<p class="stamp-toggle-note">No stamps available yet.</p>';
@@ -584,45 +648,53 @@
   }
 
   function createDemoData() {
+    function demoStampImage(fileName) {
+      return { url_4x: "demo-stamps/" + fileName };
+    }
+
+    function demoBadgeImage(fileName) {
+      return "demo-stamps/" + fileName;
+    }
+
     return {
       emotesByTier: {
         "1000": [
-          { id: "demo-hi", name: "DemoHi", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_a2f6f67fce8c46ad9f9af4c8ec7dba6d/default/light/3.0" } },
-          { id: "demo-nice", name: "DemoNice", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_d4d30d48bb2f4dbe8db6f484f31b4052/default/light/3.0" } },
-          { id: "demo-wave", name: "DemoWave", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_62e6f6d3dbe54ca5b6cf5c1b7ece4e90/default/light/3.0" } },
-          { id: "demo-cheer", name: "DemoCheer", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } },
-          { id: "demo-hype", name: "DemoHype", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_71c6ef73d2eb44f39e192f4ca6aeb4c0/default/light/3.0" } },
-          { id: "demo-wow", name: "DemoWow", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_1fb7bf8a4d4043d7a8fcebb8f485cb22/default/light/3.0" } }
+          { id: "demo-hi", name: "DemoHi", tier: "1000", images: demoStampImage("demo-hi.svg") },
+          { id: "demo-nice", name: "DemoNice", tier: "1000", images: demoStampImage("demo-nice.svg") },
+          { id: "demo-wave", name: "DemoWave", tier: "1000", images: demoStampImage("demo-wave.svg") },
+          { id: "demo-cheer", name: "DemoCheer", tier: "1000", images: demoStampImage("demo-cheer.svg") },
+          { id: "demo-hype", name: "DemoHype", tier: "1000", images: demoStampImage("demo-hype.svg") },
+          { id: "demo-wow", name: "DemoWow", tier: "1000", images: demoStampImage("demo-wow.svg") }
         ],
         "2000": [
-          { id: "demo-love", name: "DemoLove", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7f5f7e130d48472aa70abf4fcb8915f2/default/light/3.0" } },
-          { id: "demo-clap", name: "DemoClap", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5ca74b0f78544d30bb553f6504f4111d/default/light/3.0" } },
-          { id: "demo-fire", name: "DemoFire", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_870273fb2a1f41a6b584598987f58dc4/default/light/3.0" } },
-          { id: "demo-heart", name: "DemoHeart", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_df1d47f73ab14f2a8f53951f2f8f4e97/default/light/3.0" } }
+          { id: "demo-love", name: "DemoLove", tier: "2000", images: demoStampImage("demo-love.svg") },
+          { id: "demo-clap", name: "DemoClap", tier: "2000", images: demoStampImage("demo-clap.svg") },
+          { id: "demo-fire", name: "DemoFire", tier: "2000", images: demoStampImage("demo-fire.svg") },
+          { id: "demo-heart", name: "DemoHeart", tier: "2000", images: demoStampImage("demo-heart.svg") }
         ],
         "3000": [
-          { id: "demo-gg", name: "DemoGG", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_2c5b8c398f6f422f9de0b166cdd68f6f/default/light/3.0" } },
-          { id: "demo-king", name: "DemoKing", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_bf8087d8bc6046a6a06d2f14ac13d2db/default/light/3.0" } },
-          { id: "demo-halo", name: "DemoHalo", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_97de78f7df784c6ab8e8d0ca4a3f2d4c/default/light/3.0" } },
-          { id: "demo-max", name: "DemoMax", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_945ec6e9324e4fbe80f9f24f5b17aa73/default/light/3.0" } }
+          { id: "demo-gg", name: "DemoGG", tier: "3000", images: demoStampImage("demo-gg.svg") },
+          { id: "demo-king", name: "DemoKing", tier: "3000", images: demoStampImage("demo-king.svg") },
+          { id: "demo-halo", name: "DemoHalo", tier: "3000", images: demoStampImage("demo-halo.svg") },
+          { id: "demo-max", name: "DemoMax", tier: "3000", images: demoStampImage("demo-max.svg") }
         ]
       },
       followerEmotes: [
-        { id: "follower-wave", name: "FollowerWave", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } },
-        { id: "follower-heart", name: "FollowerHeart", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_df1d47f73ab14f2a8f53951f2f8f4e97/default/light/3.0" } },
-        { id: "follower-hype", name: "FollowerHype", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_71c6ef73d2eb44f39e192f4ca6aeb4c0/default/light/3.0" } }
+        { id: "follower-wave", name: "FollowerWave", images: demoStampImage("follower-wave.svg") },
+        { id: "follower-heart", name: "FollowerHeart", images: demoStampImage("follower-heart.svg") },
+        { id: "follower-hype", name: "FollowerHype", images: demoStampImage("follower-hype.svg") }
       ],
       subBadges: [
-        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9ba38fd3-bfae-4f87-bd25-4f6c4ddf3f2f/3" },
-        { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9550e168-8ccf-4fae-b2d0-11a3f53b829d/3" },
-        { id: "6", title: "Subscriber 6", description: "6 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5f13bb5d-83e4-40f8-a55d-4b6e0f0930f8/3" },
-        { id: "12", title: "Subscriber 12", description: "12 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/20f26d17-6f28-4d7a-9f45-fd98f7f4a26c/3" }
+        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: demoBadgeImage("sub-1.svg") },
+        { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: demoBadgeImage("sub-3.svg") },
+        { id: "6", title: "Subscriber 6", description: "6 months", imageUrl: demoBadgeImage("sub-6.svg") },
+        { id: "12", title: "Subscriber 12", description: "12 months", imageUrl: demoBadgeImage("sub-12.svg") }
       ],
       bitsBadges: [
-        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/8d7f4fcf-b3db-49a9-97f8-1de6be8a7fe5/3" },
-        { id: "1000", title: "Bits 1000", description: "1000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/0f7f9c4a-3e7c-4d7e-a413-aec2a3f8b80f/3" },
-        { id: "5000", title: "Bits 5000", description: "5000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5eff65f4-95b5-4f8f-8fd5-53ee2055ebf3/3" },
-        { id: "10000", title: "Bits 10000", description: "10000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/bf0f89fd-1e7e-444b-8842-93685d2e18ea/3" }
+        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: demoBadgeImage("bits-100.svg") },
+        { id: "1000", title: "Bits 1000", description: "1000 bits", imageUrl: demoBadgeImage("bits-1000.svg") },
+        { id: "5000", title: "Bits 5000", description: "5000 bits", imageUrl: demoBadgeImage("bits-5000.svg") },
+        { id: "10000", title: "Bits 10000", description: "10000 bits", imageUrl: demoBadgeImage("bits-10000.svg") }
       ]
     };
   }

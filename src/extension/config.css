@@ -392,6 +392,13 @@ body {
   min-height: 0;
   flex: 1;
   padding-right: 2px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.section::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 #preview .section {
@@ -448,14 +455,14 @@ body {
 }
 
 .ed-item--emote {
-  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--label-space, 30px));
+  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--emote-label-space, 30px));
   width: 100%;
   min-width: 0;
   justify-self: stretch;
 }
 
 .ed-item--badge {
-  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--label-space, 30px));
+  min-height: calc(var(--emote-size, 56px) + var(--item-padding, 8px) * 2 + var(--badge-label-space, 30px));
 }
 
 .ed-image {

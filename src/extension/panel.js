@@ -29,13 +29,15 @@
   function getPersistedKeys(config) {
     return {
       showEmotes: config.showEmotes,
+      showBadges: config.showBadges,
       showFollowerStamps: config.showFollowerStamps,
       showTier1000: config.showTier1000,
       showTier2000: config.showTier2000,
       showTier3000: config.showTier3000,
       showSubBadges: config.showSubBadges,
       showBitsBadges: config.showBitsBadges,
-      showStampNames: config.showStampNames,
+      showEmoteNames: config.showEmoteNames,
+      showBadgeNames: config.showBadgeNames,
       hiddenStampIds: config.hiddenStampIds,
       headerTitle: config.headerTitle,
       headerColor: config.headerColor,
@@ -200,39 +202,47 @@
   }
 
   function createDemoData() {
+    function demoStampImage(fileName) {
+      return { url_4x: "demo-stamps/" + fileName };
+    }
+
+    function demoBadgeImage(fileName) {
+      return "demo-stamps/" + fileName;
+    }
+
     return {
       emotesByTier: {
         "1000": [
-          { id: "demo-hi", name: "DemoHi", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_a2f6f67fce8c46ad9f9af4c8ec7dba6d/default/light/3.0" } },
-          { id: "demo-nice", name: "DemoNice", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_d4d30d48bb2f4dbe8db6f484f31b4052/default/light/3.0" } },
-          { id: "demo-wave", name: "DemoWave", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_62e6f6d3dbe54ca5b6cf5c1b7ece4e90/default/light/3.0" } },
-          { id: "demo-cheer", name: "DemoCheer", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } }
+          { id: "demo-hi", name: "DemoHi", tier: "1000", images: demoStampImage("demo-hi.svg") },
+          { id: "demo-nice", name: "DemoNice", tier: "1000", images: demoStampImage("demo-nice.svg") },
+          { id: "demo-wave", name: "DemoWave", tier: "1000", images: demoStampImage("demo-wave.svg") },
+          { id: "demo-cheer", name: "DemoCheer", tier: "1000", images: demoStampImage("demo-cheer.svg") }
         ],
         "2000": [
-          { id: "demo-love", name: "DemoLove", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7f5f7e130d48472aa70abf4fcb8915f2/default/light/3.0" } },
-          { id: "demo-clap", name: "DemoClap", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5ca74b0f78544d30bb553f6504f4111d/default/light/3.0" } },
-          { id: "demo-fire", name: "DemoFire", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_870273fb2a1f41a6b584598987f58dc4/default/light/3.0" } }
+          { id: "demo-love", name: "DemoLove", tier: "2000", images: demoStampImage("demo-love.svg") },
+          { id: "demo-clap", name: "DemoClap", tier: "2000", images: demoStampImage("demo-clap.svg") },
+          { id: "demo-fire", name: "DemoFire", tier: "2000", images: demoStampImage("demo-fire.svg") }
         ],
         "3000": [
-          { id: "demo-gg", name: "DemoGG", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_2c5b8c398f6f422f9de0b166cdd68f6f/default/light/3.0" } },
-          { id: "demo-king", name: "DemoKing", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_bf8087d8bc6046a6a06d2f14ac13d2db/default/light/3.0" } },
-          { id: "demo-halo", name: "DemoHalo", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_97de78f7df784c6ab8e8d0ca4a3f2d4c/default/light/3.0" } }
+          { id: "demo-gg", name: "DemoGG", tier: "3000", images: demoStampImage("demo-gg.svg") },
+          { id: "demo-king", name: "DemoKing", tier: "3000", images: demoStampImage("demo-king.svg") },
+          { id: "demo-halo", name: "DemoHalo", tier: "3000", images: demoStampImage("demo-halo.svg") }
         ]
       },
       followerEmotes: [
-        { id: "follower-wave", name: "FollowerWave", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } },
-        { id: "follower-heart", name: "FollowerHeart", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_df1d47f73ab14f2a8f53951f2f8f4e97/default/light/3.0" } },
-        { id: "follower-hype", name: "FollowerHype", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_71c6ef73d2eb44f39e192f4ca6aeb4c0/default/light/3.0" } }
+        { id: "follower-wave", name: "FollowerWave", images: demoStampImage("follower-wave.svg") },
+        { id: "follower-heart", name: "FollowerHeart", images: demoStampImage("follower-heart.svg") },
+        { id: "follower-hype", name: "FollowerHype", images: demoStampImage("follower-hype.svg") }
       ],
       subBadges: [
-        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9ba38fd3-bfae-4f87-bd25-4f6c4ddf3f2f/3" },
-        { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9550e168-8ccf-4fae-b2d0-11a3f53b829d/3" },
-        { id: "6", title: "Subscriber 6", description: "6 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5f13bb5d-83e4-40f8-a55d-4b6e0f0930f8/3" }
+        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: demoBadgeImage("sub-1.svg") },
+        { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: demoBadgeImage("sub-3.svg") },
+        { id: "6", title: "Subscriber 6", description: "6 months", imageUrl: demoBadgeImage("sub-6.svg") }
       ],
       bitsBadges: [
-        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/8d7f4fcf-b3db-49a9-97f8-1de6be8a7fe5/3" },
-        { id: "1000", title: "Bits 1000", description: "1000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/0f7f9c4a-3e7c-4d7e-a413-aec2a3f8b80f/3" },
-        { id: "5000", title: "Bits 5000", description: "5000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5eff65f4-95b5-4f8f-8fd5-53ee2055ebf3/3" }
+        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: demoBadgeImage("bits-100.svg") },
+        { id: "1000", title: "Bits 1000", description: "1000 bits", imageUrl: demoBadgeImage("bits-1000.svg") },
+        { id: "5000", title: "Bits 5000", description: "5000 bits", imageUrl: demoBadgeImage("bits-5000.svg") }
       ]
     };
   }

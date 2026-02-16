@@ -2,6 +2,14 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-02-16
+- Reworked Visibility settings into parent/child groups for `Stamps` and `Badges`, with separate `Names` toggles for each.
+- Updated rendering config model to support `showBadges`, `showEmoteNames`, and `showBadgeNames` with backward compatibility for legacy `showStampNames`.
+- Improved column fitting behavior by tightening frame-size constraints and syncing the Config `columns` control with preview-fit limits.
+- Added local demo stamp/badge SVG assets under `src/extension/demo-stamps` and switched local demo data to use bundled assets.
+- Hid section scrollbars while keeping scroll behavior (`overflow-y: auto`) for both panel and config preview.
+- Updated submission build scripts to exclude `demo-stamps` from `dist/extension` and final ZIP package.
+
 ## [0.1.4] - 2026-02-16
 - Updated default theme colors to a neon style (`#f06d9a`, `#6cc7ef`, `#232531`) for panel and config.
 - Added dedicated neon glow variables (`--primary-glow`, `--accent-glow`, `--header-glow`, `--footer-glow`) and applied them across header/footer/cards/tabs.

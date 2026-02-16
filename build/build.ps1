@@ -20,6 +20,12 @@ New-Item -ItemType Directory -Path $distExtension -Force | Out-Null
 # 3) Copy src/extension
 Copy-Item -Path (Join-Path $srcExtension "*") -Destination $distExtension -Recurse -Force
 
+# Exclude local demo assets from submission package
+$demoAssets = Join-Path $distExtension "demo-stamps"
+if (Test-Path $demoAssets) {
+  Remove-Item $demoAssets -Recurse -Force
+}
+
 # 4) Create zip
 if (Test-Path $zipPath) {
   Remove-Item $zipPath -Force

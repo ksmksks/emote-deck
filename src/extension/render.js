@@ -3,13 +3,15 @@
 
   var DEFAULT_CONFIG = {
     showEmotes: true,
+    showBadges: true,
     showFollowerStamps: true,
     showTier1000: true,
     showTier2000: true,
     showTier3000: true,
     showSubBadges: true,
     showBitsBadges: true,
-    showStampNames: true,
+    showEmoteNames: true,
+    showBadgeNames: true,
     headerTitle: "EmoteDeck",
     headerColor: "#1b3f5f",
     footerColor: "#4a2746",
@@ -220,13 +222,22 @@
     var cfg = Object.assign({}, DEFAULT_CONFIG, rawConfig || {});
 
     cfg.showEmotes = cfg.showEmotes !== false;
+    cfg.showBadges = cfg.showBadges !== false;
     cfg.showFollowerStamps = cfg.showFollowerStamps !== false;
     cfg.showTier1000 = cfg.showTier1000 !== false;
     cfg.showTier2000 = cfg.showTier2000 !== false;
     cfg.showTier3000 = cfg.showTier3000 !== false;
     cfg.showSubBadges = cfg.showSubBadges !== false;
     cfg.showBitsBadges = cfg.showBitsBadges !== false;
-    cfg.showStampNames = cfg.showStampNames !== false;
+    var hasShowEmoteNames = typeof cfg.showEmoteNames === "boolean";
+    var hasShowBadgeNames = typeof cfg.showBadgeNames === "boolean";
+    var legacyShowNames = cfg.showStampNames !== false;
+    cfg.showEmoteNames = hasShowEmoteNames ? cfg.showEmoteNames : legacyShowNames;
+    cfg.showBadgeNames = hasShowBadgeNames ? cfg.showBadgeNames : legacyShowNames;
+    if (!cfg.showBadges) {
+      cfg.showSubBadges = false;
+      cfg.showBitsBadges = false;
+    }
     cfg.headerTitle = String(cfg.headerTitle || DEFAULT_CONFIG.headerTitle).trim().slice(0, 48) || DEFAULT_CONFIG.headerTitle;
 
     cfg.columns = clamp(parseIntOrDefault(cfg.columns, DEFAULT_CONFIG.columns), 1, 8);
@@ -407,7 +418,7 @@
     if (cfg.showEmotes) {
       tabs.push({ id: "emotes", label: "Stamps" });
     }
-    if (cfg.showSubBadges || cfg.showBitsBadges) {
+    if (cfg.showBadges && (cfg.showSubBadges || cfg.showBitsBadges)) {
       tabs.push({ id: "badges", label: "Badges" });
     }
     return tabs;
@@ -590,7 +601,7 @@
             } else {
               html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
             }
-            if (cfg.showStampNames) {
+            if (cfg.showEmoteNames) {
               html += '<p class="ed-label">' + emoteName + "</p>";
             }
             html += "</article>";
@@ -627,7 +638,7 @@
           } else {
             html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
           }
-          if (cfg.showStampNames) {
+          if (cfg.showEmoteNames) {
             html += '<p class="ed-label">' + emoteName + "</p>";
           }
           html += "</article>";
@@ -664,7 +675,7 @@
       } else {
         html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" alt="' + emoteName + '" loading="lazy">';
       }
-      if (cfg.showStampNames) {
+      if (cfg.showEmoteNames) {
         html += '<p class="ed-label">' + emoteName + "</p>";
       }
       html += "</article>";
@@ -691,10 +702,10 @@
       var imageUrl = escapeHtml(badge.imageUrl || "");
       html += '<article class="ed-item ed-item--badge" data-ed-kind="' + escapeHtml(badgeKind) + '" data-ed-id="' + escapeHtml(getItemId(badge)) + '">';
       html += '<img class="ed-image" src="' + imageUrl + '" alt="' + title + '" loading="lazy">';
-      if (cfg.showStampNames) {
+      if (cfg.showBadgeNames) {
         html += '<p class="ed-label">' + title + "</p>";
       }
-      if (cfg.showStampNames && desc) {
+      if (cfg.showBadgeNames && desc) {
         html += '<p class="ed-meta">' + desc + "</p>";
       }
       html += "</article>";
@@ -743,11 +754,13 @@
 
     container.style.setProperty("--columns", String(cfg.columns));
     container.style.setProperty("--effective-columns", String(layout.effectiveColumns));
+    container.style.setProperty("--max-columns-fit", String(layout.maxColumnsFit));
     container.style.setProperty("--emote-size", layout.imageSize + "px");
     container.style.setProperty("--item-padding", cfg.itemPadding + "px");
     container.style.setProperty("--item-gap", cfg.itemGap + "px");
     container.style.setProperty("--item-frame-size", layout.frameSize + "px");
-    container.style.setProperty("--label-space", cfg.showStampNames ? "30px" : "6px");
+    container.style.setProperty("--emote-label-space", cfg.showEmoteNames ? "30px" : "6px");
+    container.style.setProperty("--badge-label-space", cfg.showBadgeNames ? "30px" : "6px");
     var footerHtml = '<footer class="ed-footer">' +
       '<p class="ed-footer-row">' +
       '<span class="ed-footer-text">EmoteDeck Panel</span>' +
@@ -835,13 +848,16 @@
     var width = container && container.clientWidth ? container.clientWidth : 300;
     var shellWidth = Math.min(width, 300);
     var usableWidth = Math.max(120, shellWidth - 24);
-    var minFrameSize = Math.max(48, cfg.itemPadding * 2 + 34);
+    // Keep frame compact enough to allow 6+ columns when padding/gap are small.
+    var minFrameSize = Math.max(24, cfg.itemPadding * 2 + 18);
+    var maxColumnsFit = calculateEffectiveColumns(container, 8, minFrameSize, cfg.itemGap);
     var effectiveColumns = calculateEffectiveColumns(container, cfg.columns, minFrameSize, cfg.itemGap);
     var frameSize = Math.floor((usableWidth - cfg.itemGap * (effectiveColumns - 1)) / effectiveColumns);
     frameSize = Math.max(minFrameSize, frameSize);
     var inner = Math.max(20, frameSize - cfg.itemPadding * 2 - 2);
     var imageSize = Math.max(18, Math.floor(inner * (cfg.emoteSize / 100)));
     return {
+      maxColumnsFit: maxColumnsFit,
       effectiveColumns: effectiveColumns,
       frameSize: frameSize,
       imageSize: imageSize

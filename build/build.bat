@@ -19,6 +19,9 @@ mkdir "%DIST_EXT%"
 REM 3) Copy src/extension
 xcopy "%SRC_EXT%\*" "%DIST_EXT%\" /E /I /Y >nul
 
+REM Exclude local demo assets from submission package
+if exist "%DIST_EXT%\demo-stamps" rmdir /s /q "%DIST_EXT%\demo-stamps"
+
 REM 4) Create zip with Windows built-in Compress-Archive
 powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path '%ZIP%') { Remove-Item '%ZIP%' -Force }; Compress-Archive -Path '%DIST_EXT%\*' -DestinationPath '%ZIP%' -Force"
 if errorlevel 1 (
