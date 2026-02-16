@@ -77,13 +77,36 @@ body {
 .config-form {
   margin-top: 14px;
   display: grid;
+  gap: 12px;
+}
+
+.control-group {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
   gap: 10px;
+  min-width: 0;
+}
+
+.control-group legend {
+  padding: 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: #d7e3ff;
+  opacity: 0.95;
 }
 
 .control {
   display: grid;
   gap: 6px;
   font-size: 13px;
+}
+
+.control > span {
+  opacity: 0.92;
 }
 
 .control.checkbox {
@@ -280,9 +303,10 @@ body {
 .ed-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(var(--columns, 3), minmax(0, 1fr));
   gap: 8px;
-  max-width: calc(var(--columns, 4) * (var(--item-frame-size, 72px) + 16px));
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .ed-item {
@@ -294,6 +318,15 @@ body {
   text-align: center;
   box-shadow: 0 0 var(--glow) var(--glow-color);
   animation: rise-in 460ms ease both;
+}
+
+.ed-item[draggable="true"] {
+  cursor: grab;
+}
+
+.ed-item.is-dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
 }
 
 .ed-item--emote {

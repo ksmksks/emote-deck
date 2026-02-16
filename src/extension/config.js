@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var RENDER = window.EmoteDeckRender;
@@ -18,6 +18,9 @@
     "footerColor",
     "panelBackgroundColor",
     "stampBackgroundColor",
+    "emoteOrderByTier",
+    "subBadgeOrder",
+    "bitsBadgeOrder",
     "showEmotes",
     "showSubBadges",
     "showBitsBadges",
@@ -32,8 +35,6 @@
     "borderRadius",
     "glowIntensity"
   ];
-
-  var LOCAL_STORAGE_KEY = "emotedeck-config-local";
 
   var controls = {
     headerTitle: document.getElementById("headerTitle"),
@@ -67,7 +68,8 @@
     config: Object.assign({}, RENDER.defaults),
     data: createDemoData(),
     activeTab: "emotes",
-    saveTimer: null
+    saveTimer: null,
+    pendingRemoteSave: false
   };
 
   function setStatus(message, isError) {
@@ -94,23 +96,25 @@
     }
   }
 
-  function loadLocalConfig() {
-    var raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) {
-      return Object.assign({}, RENDER.defaults);
-    }
-    return parseConfig(raw);
-  }
-
-  function saveLocalConfig() {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(pickPersistedConfig(state.config)));
-  }
-
   function syncRangeLabels() {
     controls.columnsValue.textContent = controls.columns.value;
     controls.emoteSizeValue.textContent = controls.emoteSize.value;
     controls.borderRadiusValue.textContent = controls.borderRadius.value;
     controls.glowIntensityValue.textContent = controls.glowIntensity.value;
+  }
+
+  function getRecommendedEmoteSize(columns) {
+    var col = parseInt(columns, 10) || 3;
+    if (col <= 2) {
+      return 64;
+    }
+    if (col === 3) {
+      return 52;
+    }
+    if (col === 4) {
+      return 42;
+    }
+    return 34;
   }
 
   function writeForm(config) {
@@ -176,12 +180,61 @@
   function renderPreview() {
     var configForRender = Object.assign({}, state.config, {
       activeTab: state.activeTab,
+      enableDragSort: true,
       onTabChange: function (nextTab) {
         state.activeTab = nextTab;
         renderPreview();
+      },
+      onOrderChange: function (payload) {
+        applyOrderChange(payload);
+        renderPreview();
+        scheduleSave();
       }
     });
     RENDER.render(previewElement, state.data, configForRender);
+  }
+
+  function moveIdInList(list, fromId, toId) {
+    var items = Array.isArray(list) ? list.slice() : [];
+    if (items.indexOf(fromId) < 0) {
+      items.push(fromId);
+    }
+    if (items.indexOf(toId) < 0) {
+      items.push(toId);
+    }
+    var fromIndex = items.indexOf(fromId);
+    var toIndex = items.indexOf(toId);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+      return items;
+    }
+    items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, fromId);
+    return items;
+  }
+
+  function applyOrderChange(payload) {
+    if (!payload || !payload.kind || !payload.fromId || !payload.toId) {
+      return;
+    }
+    var baseOrder = Array.isArray(payload.currentOrder) ? payload.currentOrder : [];
+
+    if (payload.kind === "emotes") {
+      var tier = payload.tier || "1000";
+      var current = baseOrder.length ? baseOrder : ((state.config.emoteOrderByTier && state.config.emoteOrderByTier[tier]) || []);
+      var nextTierOrder = moveIdInList(current, payload.fromId, payload.toId);
+      state.config.emoteOrderByTier = Object.assign({}, state.config.emoteOrderByTier, {});
+      state.config.emoteOrderByTier[tier] = nextTierOrder;
+      return;
+    }
+
+    if (payload.kind === "subBadges") {
+      state.config.subBadgeOrder = moveIdInList(baseOrder.length ? baseOrder : state.config.subBadgeOrder, payload.fromId, payload.toId);
+      return;
+    }
+
+    if (payload.kind === "bitsBadges") {
+      state.config.bitsBadgeOrder = moveIdInList(baseOrder.length ? baseOrder : state.config.bitsBadgeOrder, payload.fromId, payload.toId);
+    }
   }
 
   function scheduleSave() {
@@ -216,7 +269,7 @@
     return response.json();
   }
 
-  function normalizeEmotes(items) {
+  function normalizeEmotes(items, responseTemplate) {
     var grouped = { "1000": [], "2000": [], "3000": [] };
     (items || []).forEach(function (emote) {
       var tier = String(emote.tier || "");
@@ -227,7 +280,11 @@
         id: emote.id,
         name: emote.name,
         tier: tier,
-        images: emote.images || {}
+        images: emote.images || {},
+        format: emote.format || [],
+        scale: emote.scale || [],
+        theme_mode: emote.theme_mode || [],
+        template: emote.template || responseTemplate || ""
       });
     });
     return grouped;
@@ -269,7 +326,7 @@
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var badges = normalizeBadges(badgesResponse.data);
     state.data = {
-      emotesByTier: normalizeEmotes(emotesResponse.data),
+      emotesByTier: normalizeEmotes(emotesResponse.data, emotesResponse.template),
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
     };
@@ -277,11 +334,20 @@
 
   async function saveConfig(manual) {
     try {
-      saveLocalConfig();
+      if (window.Twitch && window.Twitch.ext && window.Twitch.ext.configuration) {
+        if (!state.auth) {
+          state.pendingRemoteSave = true;
+          setStatus("Waiting for Twitch authorization to save configuration.", false);
+          return;
+        }
 
-      if (window.Twitch && window.Twitch.ext && window.Twitch.ext.configuration && state.auth) {
         var payload = JSON.stringify(pickPersistedConfig(state.config));
-        window.Twitch.ext.configuration.set("broadcaster", "1", payload);
+        var version = String(Date.now());
+        window.Twitch.ext.configuration.set("broadcaster", version, payload);
+        state.pendingRemoteSave = false;
+      } else {
+        setStatus("Local preview mode: configuration is not persisted.", false);
+        return;
       }
 
       setStatus(manual ? "Saved." : "Auto-saved.", false);
@@ -289,7 +355,6 @@
       setStatus(error.message || "Failed to save.", true);
     }
   }
-
   function loadRemoteConfig() {
     if (!window.Twitch || !window.Twitch.ext || !window.Twitch.ext.configuration) {
       return;
@@ -305,6 +370,10 @@
 
   function onFormInput(event) {
     var targetId = event.target && event.target.id ? event.target.id : "";
+
+    if (targetId === "columns") {
+      controls.emoteSize.value = String(getRecommendedEmoteSize(controls.columns.value));
+    }
 
     if (targetId === "theme" && controls.theme.value !== "custom") {
       applyPresetColors(controls.theme.value);
@@ -325,20 +394,36 @@
       emotesByTier: {
         "1000": [
           { id: "demo-hi", name: "DemoHi", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_a2f6f67fce8c46ad9f9af4c8ec7dba6d/default/light/3.0" } },
-          { id: "demo-nice", name: "DemoNice", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_d4d30d48bb2f4dbe8db6f484f31b4052/default/light/3.0" } }
+          { id: "demo-nice", name: "DemoNice", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_d4d30d48bb2f4dbe8db6f484f31b4052/default/light/3.0" } },
+          { id: "demo-wave", name: "DemoWave", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_62e6f6d3dbe54ca5b6cf5c1b7ece4e90/default/light/3.0" } },
+          { id: "demo-cheer", name: "DemoCheer", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3836d4622ed14c35b7b9ba31989fcb95/default/light/3.0" } },
+          { id: "demo-hype", name: "DemoHype", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_71c6ef73d2eb44f39e192f4ca6aeb4c0/default/light/3.0" } },
+          { id: "demo-wow", name: "DemoWow", tier: "1000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_1fb7bf8a4d4043d7a8fcebb8f485cb22/default/light/3.0" } }
         ],
         "2000": [
-          { id: "demo-love", name: "DemoLove", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7f5f7e130d48472aa70abf4fcb8915f2/default/light/3.0" } }
+          { id: "demo-love", name: "DemoLove", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7f5f7e130d48472aa70abf4fcb8915f2/default/light/3.0" } },
+          { id: "demo-clap", name: "DemoClap", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5ca74b0f78544d30bb553f6504f4111d/default/light/3.0" } },
+          { id: "demo-fire", name: "DemoFire", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_870273fb2a1f41a6b584598987f58dc4/default/light/3.0" } },
+          { id: "demo-heart", name: "DemoHeart", tier: "2000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_df1d47f73ab14f2a8f53951f2f8f4e97/default/light/3.0" } }
         ],
         "3000": [
-          { id: "demo-gg", name: "DemoGG", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_2c5b8c398f6f422f9de0b166cdd68f6f/default/light/3.0" } }
+          { id: "demo-gg", name: "DemoGG", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_2c5b8c398f6f422f9de0b166cdd68f6f/default/light/3.0" } },
+          { id: "demo-king", name: "DemoKing", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_bf8087d8bc6046a6a06d2f14ac13d2db/default/light/3.0" } },
+          { id: "demo-halo", name: "DemoHalo", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_97de78f7df784c6ab8e8d0ca4a3f2d4c/default/light/3.0" } },
+          { id: "demo-max", name: "DemoMax", tier: "3000", images: { url_4x: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_945ec6e9324e4fbe80f9f24f5b17aa73/default/light/3.0" } }
         ]
       },
       subBadges: [
-        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9ba38fd3-bfae-4f87-bd25-4f6c4ddf3f2f/3" }
+        { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9ba38fd3-bfae-4f87-bd25-4f6c4ddf3f2f/3" },
+        { id: "3", title: "Subscriber 3", description: "3 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/9550e168-8ccf-4fae-b2d0-11a3f53b829d/3" },
+        { id: "6", title: "Subscriber 6", description: "6 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5f13bb5d-83e4-40f8-a55d-4b6e0f0930f8/3" },
+        { id: "12", title: "Subscriber 12", description: "12 months", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/20f26d17-6f28-4d7a-9f45-fd98f7f4a26c/3" }
       ],
       bitsBadges: [
-        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/8d7f4fcf-b3db-49a9-97f8-1de6be8a7fe5/3" }
+        { id: "100", title: "Bits 100", description: "100 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/8d7f4fcf-b3db-49a9-97f8-1de6be8a7fe5/3" },
+        { id: "1000", title: "Bits 1000", description: "1000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/0f7f9c4a-3e7c-4d7e-a413-aec2a3f8b80f/3" },
+        { id: "5000", title: "Bits 5000", description: "5000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/5eff65f4-95b5-4f8f-8fd5-53ee2055ebf3/3" },
+        { id: "10000", title: "Bits 10000", description: "10000 bits", imageUrl: "https://static-cdn.jtvnw.net/badges/v1/bf0f89fd-1e7e-444b-8842-93685d2e18ea/3" }
       ]
     };
   }
@@ -361,7 +446,7 @@
 
   async function initTwitchFlow() {
     if (!window.Twitch || !window.Twitch.ext) {
-      setStatus("Running in local mode outside Twitch.", false);
+      setStatus("Running in local preview mode. Configuration is not persisted.", false);
       return;
     }
 
@@ -375,7 +460,13 @@
 
     window.Twitch.ext.onAuthorized(async function (auth) {
       state.auth = auth;
-      loadRemoteConfig();
+
+      if (state.pendingRemoteSave) {
+        await saveConfig(false);
+      } else {
+        loadRemoteConfig();
+      }
+
       renderPreview();
       setStatus("Authorized. Loading Helix data...", false);
 
@@ -390,7 +481,7 @@
   }
 
   function init() {
-    state.config = loadLocalConfig();
+    state.config = Object.assign({}, RENDER.defaults);
     writeForm(state.config);
     wireEvents();
     renderPreview();
@@ -400,3 +491,4 @@
 
   init();
 })();
+

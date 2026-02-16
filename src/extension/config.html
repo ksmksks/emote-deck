@@ -12,127 +12,142 @@
       <section class="config-panel">
         <header class="config-header">
           <h1>EmoteDeck Config</h1>
-          <p>設定はプレビューへリアルタイム反映されます。</p>
+          <p>Group settings by category and preview changes in real time.</p>
         </header>
 
         <form id="config-form" class="config-form" autocomplete="off">
-          <label class="control">
-            <span>headerTitle</span>
-            <input id="headerTitle" type="text" maxlength="48" placeholder="EmoteDeck">
-          </label>
+          <fieldset class="control-group">
+            <legend>Header and Footer</legend>
+            <label class="control">
+              <span>headerTitle</span>
+              <input id="headerTitle" type="text" maxlength="48" placeholder="EmoteDeck">
+            </label>
 
-          <label class="control">
-            <span>headerColor</span>
-            <input id="headerColor" type="color" value="#e56aa6">
-          </label>
+            <label class="control">
+              <span>headerColor</span>
+              <input id="headerColor" type="color" value="#e56aa6">
+            </label>
 
-          <label class="control">
-            <span>footerColor</span>
-            <input id="footerColor" type="color" value="#e56aa6">
-          </label>
+            <label class="control">
+              <span>footerColor</span>
+              <input id="footerColor" type="color" value="#e56aa6">
+            </label>
+          </fieldset>
 
-          <label class="control checkbox">
-            <input id="showEmotes" type="checkbox" checked>
-            <span>showEmotes</span>
-          </label>
+          <fieldset class="control-group">
+            <legend>Visibility</legend>
+            <label class="control checkbox">
+              <input id="showEmotes" type="checkbox" checked>
+              <span>showEmotes</span>
+            </label>
 
-          <label class="control checkbox">
-            <input id="showSubBadges" type="checkbox" checked>
-            <span>showSubBadges</span>
-          </label>
+            <label class="control checkbox">
+              <input id="showSubBadges" type="checkbox" checked>
+              <span>showSubBadges</span>
+            </label>
 
-          <label class="control checkbox">
-            <input id="showBitsBadges" type="checkbox" checked>
-            <span>showBitsBadges</span>
-          </label>
+            <label class="control checkbox">
+              <input id="showBitsBadges" type="checkbox" checked>
+              <span>showBitsBadges</span>
+            </label>
 
-          <label class="control checkbox">
-            <input id="showStampNames" type="checkbox" checked>
-            <span>showStampNames</span>
-          </label>
+            <label class="control checkbox">
+              <input id="showStampNames" type="checkbox" checked>
+              <span>showStampNames</span>
+            </label>
+          </fieldset>
 
-          <label class="control">
-            <span>tierOrder</span>
-            <select id="tierOrder">
-              <option value="asc">Tier 1 -> Tier 3</option>
-              <option value="desc">Tier 3 -> Tier 1</option>
-            </select>
-          </label>
+          <fieldset class="control-group">
+            <legend>Layout</legend>
+            <label class="control">
+              <span>tierOrder</span>
+              <select id="tierOrder">
+                <option value="asc">Tier 1 -> Tier 3</option>
+                <option value="desc">Tier 3 -> Tier 1</option>
+              </select>
+            </label>
 
-          <label class="control">
-            <span>columns</span>
-            <div class="range-wrap">
-              <input id="columns" type="range" min="2" max="8" step="1" value="4">
-              <output id="columnsValue">4</output>
-            </div>
-          </label>
+            <label class="control">
+              <span>columns</span>
+              <div class="range-wrap">
+                <input id="columns" type="range" min="2" max="5" step="1" value="3">
+                <output id="columnsValue">3</output>
+              </div>
+            </label>
 
-          <label class="control">
-            <span>emoteSize</span>
-            <div class="range-wrap">
-              <input id="emoteSize" type="range" min="32" max="112" step="2" value="56">
-              <output id="emoteSizeValue">56</output>
-            </div>
-          </label>
+            <label class="control">
+              <span>emoteSize</span>
+              <div class="range-wrap">
+                <input id="emoteSize" type="range" min="32" max="112" step="2" value="52">
+                <output id="emoteSizeValue">52</output>
+              </div>
+            </label>
+          </fieldset>
 
-          <label class="control">
-            <span>theme</span>
-            <select id="theme">
-              <option value="custom">custom</option>
-              <option value="blush">blush</option>
-              <option value="ocean">ocean</option>
-              <option value="sunset">sunset</option>
-              <option value="forest">forest</option>
-            </select>
-          </label>
+          <fieldset class="control-group">
+            <legend>Theme and Colors</legend>
+            <label class="control">
+              <span>theme</span>
+              <select id="theme">
+                <option value="custom">custom</option>
+                <option value="blush">blush</option>
+                <option value="ocean">ocean</option>
+                <option value="sunset">sunset</option>
+                <option value="forest">forest</option>
+              </select>
+            </label>
 
-          <label class="control">
-            <span>primaryColor</span>
-            <input id="primaryColor" type="color" value="#e56aa6">
-          </label>
+            <label class="control">
+              <span>primaryColor</span>
+              <input id="primaryColor" type="color" value="#e56aa6">
+            </label>
 
-          <label class="control">
-            <span>accentColor</span>
-            <input id="accentColor" type="color" value="#ffc8dd">
-          </label>
+            <label class="control">
+              <span>accentColor</span>
+              <input id="accentColor" type="color" value="#ffc8dd">
+            </label>
 
-          <label class="control">
-            <span>backgroundColor</span>
-            <input id="backgroundColor" type="color" value="#fff7fb">
-          </label>
+            <label class="control">
+              <span>backgroundColor</span>
+              <input id="backgroundColor" type="color" value="#fff7fb">
+            </label>
 
-          <label class="control">
-            <span>panelBackgroundColor</span>
-            <input id="panelBackgroundColor" type="color" value="#ffffff">
-          </label>
+            <label class="control">
+              <span>panelBackgroundColor</span>
+              <input id="panelBackgroundColor" type="color" value="#ffffff">
+            </label>
 
-          <label class="control">
-            <span>stampBackgroundColor</span>
-            <input id="stampBackgroundColor" type="color" value="#fff0f6">
-          </label>
+            <label class="control">
+              <span>stampBackgroundColor</span>
+              <input id="stampBackgroundColor" type="color" value="#fff0f6">
+            </label>
+          </fieldset>
 
-          <label class="control">
-            <span>borderRadius</span>
-            <div class="range-wrap">
-              <input id="borderRadius" type="range" min="0" max="24" step="1" value="12">
-              <output id="borderRadiusValue">12</output>
-            </div>
-          </label>
+          <fieldset class="control-group">
+            <legend>Effects</legend>
+            <label class="control">
+              <span>borderRadius</span>
+              <div class="range-wrap">
+                <input id="borderRadius" type="range" min="0" max="24" step="1" value="12">
+                <output id="borderRadiusValue">12</output>
+              </div>
+            </label>
 
-          <label class="control">
-            <span>glowIntensity</span>
-            <div class="range-wrap">
-              <input id="glowIntensity" type="range" min="0" max="32" step="1" value="12">
-              <output id="glowIntensityValue">12</output>
-            </div>
-          </label>
+            <label class="control">
+              <span>glowIntensity</span>
+              <div class="range-wrap">
+                <input id="glowIntensity" type="range" min="0" max="32" step="1" value="12">
+                <output id="glowIntensityValue">12</output>
+              </div>
+            </label>
+          </fieldset>
         </form>
 
         <div class="buttons">
-          <button id="save-button" type="button">保存</button>
-          <button id="reset-button" type="button" class="secondary">初期値に戻す</button>
+          <button id="save-button" type="button">Save</button>
+          <button id="reset-button" type="button" class="secondary">Reset</button>
         </div>
-        <p id="config-status" class="status">初期化中...</p>
+        <p id="config-status" class="status">Initializing...</p>
       </section>
 
       <section class="preview-panel">
