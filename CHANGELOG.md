@@ -2,6 +2,25 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-02-22
+- Adjusted panel root/shell height handling (`100%` based) and body overflow behavior to reduce external iframe scrollbars on channel profile panel.
+- Ensured footer stays at the bottom even when the number of stamps/badges is small and content height is short.
+- Added a release roadmap to separate patch stabilization (`1.0.1`) from the upcoming feature release line (`1.1.0-rc.1` -> `1.1.0`).
+
+## Roadmap
+### [1.1.0-rc.1] - planned
+- Add Cheermotes in the `Stamps` tab (no extra tab), including Config visibility toggle.
+- Support per-cheermote individual visibility control and drag-and-drop ordering.
+- Keep failure isolation so cheermote fetch errors do not break existing emotes/badges rendering.
+
+### [1.1.0] - planned
+- Reorganize name display toggles (`Stamps Names` / `Badges Names`) into a dedicated interaction/settings group.
+- Add configurable label font size controls.
+- Add hover tooltip bubble for stamp/badge names.
+- Add click-to-copy for stamp names with visual feedback (e.g., `Copy!`).
+- Add configurable font family options.
+- Improve mobile popout behavior and platform-specific layout handling for Twitch mobile contexts.
+
 ## [1.0.0] - 2026-02-16
 - Reworked Visibility settings into parent/child groups for `Stamps` and `Badges`, with separate `Names` toggles for each.
 - Updated rendering config model to support `showBadges`, `showEmoteNames`, and `showBadgeNames` with backward compatibility for legacy `showStampNames`.
