@@ -31,6 +31,7 @@
       showEmotes: config.showEmotes,
       showBadges: config.showBadges,
       showFollowerStamps: config.showFollowerStamps,
+      showCheermotes: config.showCheermotes,
       showTier1000: config.showTier1000,
       showTier2000: config.showTier2000,
       showTier3000: config.showTier3000,
@@ -46,6 +47,7 @@
       stampBackgroundColor: config.stampBackgroundColor,
       emoteOrderByTier: config.emoteOrderByTier,
       followerEmoteOrder: config.followerEmoteOrder,
+      cheermoteOrder: config.cheermoteOrder,
       subBadgeOrder: config.subBadgeOrder,
       bitsBadgeOrder: config.bitsBadgeOrder,
       emoteSectionOrder: config.emoteSectionOrder,
@@ -187,15 +189,72 @@
     };
   }
 
+  function pickCheermoteImage(source) {
+    if (!source || typeof source !== "object") {
+      return "";
+    }
+    var preferredScales = ["4", "3", "2", "1.5", "1"];
+    for (var i = 0; i < preferredScales.length; i += 1) {
+      var scaleKey = preferredScales[i];
+      if (source[scaleKey]) {
+        return source[scaleKey];
+      }
+    }
+    return "";
+  }
+
+  function pickCheermoteThemeVariant(images, themeMode, animated) {
+    if (!images || typeof images !== "object") {
+      return "";
+    }
+    var mode = images[themeMode] || images.dark || images.light || {};
+    var group = animated ? (mode.animated || {}) : (mode.static || {});
+    return pickCheermoteImage(group);
+  }
+
+  function normalizeCheermotes(items) {
+    var cheermotes = [];
+    (items || []).forEach(function (item) {
+      var prefix = String(item.prefix || "Cheer");
+      (item.tiers || []).forEach(function (tier) {
+        var minBits = String(tier.min_bits || tier.id || "");
+        var animatedUrl = pickCheermoteThemeVariant(tier.images, "dark", true) || pickCheermoteThemeVariant(tier.images, "light", true);
+        var staticUrl = pickCheermoteThemeVariant(tier.images, "dark", false) || pickCheermoteThemeVariant(tier.images, "light", false);
+        var imageUrl = animatedUrl || staticUrl;
+        if (!imageUrl) {
+          return;
+        }
+        cheermotes.push({
+          id: String(tier.id || (prefix + "-" + minBits)),
+          name: prefix + " " + minBits,
+          imageUrl: staticUrl || imageUrl,
+          animatedImageUrl: animatedUrl || "",
+          staticImageUrl: staticUrl || imageUrl
+        });
+      });
+    });
+    return cheermotes;
+  }
+
   async function fetchAllData() {
     var emotesResponse = await callHelix("/chat/emotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var normalizedEmotes = normalizeEmotes(emotesResponse.data, emotesResponse);
     var badges = normalizeBadges(badgesResponse.data);
+    var cheerEmotes = [];
+
+    try {
+      var cheermotesResponse = await callHelix("/bits/cheermotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
+      cheerEmotes = normalizeCheermotes(cheermotesResponse.data);
+    } catch (error) {
+      // Keep panel rendering if only cheermote retrieval fails.
+      console.warn("Cheermotes fetch failed:", error);
+    }
 
     state.data = {
       emotesByTier: normalizedEmotes.emotesByTier,
       followerEmotes: normalizedEmotes.followerEmotes,
+      cheerEmotes: cheerEmotes,
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
     };
@@ -233,6 +292,11 @@
         { id: "follower-wave", name: "FollowerWave", images: demoStampImage("follower-wave.svg") },
         { id: "follower-heart", name: "FollowerHeart", images: demoStampImage("follower-heart.svg") },
         { id: "follower-hype", name: "FollowerHype", images: demoStampImage("follower-hype.svg") }
+      ],
+      cheerEmotes: [
+        { id: "cheer-1", name: "Cheer 1", imageUrl: demoBadgeImage("bits-100.svg") },
+        { id: "cheer-100", name: "Cheer 100", imageUrl: demoBadgeImage("bits-1000.svg") },
+        { id: "cheer-1000", name: "Cheer 1000", imageUrl: demoBadgeImage("bits-5000.svg") }
       ],
       subBadges: [
         { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: demoBadgeImage("sub-1.svg") },

@@ -20,11 +20,13 @@
     "stampBackgroundColor",
     "emoteOrderByTier",
     "followerEmoteOrder",
+    "cheermoteOrder",
     "subBadgeOrder",
     "bitsBadgeOrder",
     "showEmotes",
     "showBadges",
     "showFollowerStamps",
+    "showCheermotes",
     "showTier1000",
     "showTier2000",
     "showTier3000",
@@ -55,6 +57,7 @@
     showEmotes: document.getElementById("showEmotes"),
     showBadges: document.getElementById("showBadges"),
     showFollowerStamps: document.getElementById("showFollowerStamps"),
+    showCheermotes: document.getElementById("showCheermotes"),
     showTier1000: document.getElementById("showTier1000"),
     showTier2000: document.getElementById("showTier2000"),
     showTier3000: document.getElementById("showTier3000"),
@@ -148,6 +151,7 @@
     controls.showEmotes.checked = !!config.showEmotes;
     controls.showBadges.checked = !!config.showBadges;
     controls.showFollowerStamps.checked = !!config.showFollowerStamps;
+    controls.showCheermotes.checked = !!config.showCheermotes;
     controls.showTier1000.checked = !!config.showTier1000;
     controls.showTier2000.checked = !!config.showTier2000;
     controls.showTier3000.checked = !!config.showTier3000;
@@ -180,6 +184,7 @@
       showEmotes: controls.showEmotes.checked,
       showBadges: controls.showBadges.checked,
       showFollowerStamps: controls.showFollowerStamps.checked,
+      showCheermotes: controls.showCheermotes.checked,
       showTier1000: controls.showTier1000.checked,
       showTier2000: controls.showTier2000.checked,
       showTier3000: controls.showTier3000.checked,
@@ -264,6 +269,7 @@
     var emotesEnabled = !!controls.showEmotes.checked;
     var emoteChildren = [
       controls.showFollowerStamps,
+      controls.showCheermotes,
       controls.showTier1000,
       controls.showTier2000,
       controls.showTier3000,
@@ -308,6 +314,8 @@
       key = "emotes" + String(tier || "");
     } else if (kind === "followerStamps") {
       key = "followerStamps";
+    } else if (kind === "cheerStamps") {
+      key = "cheerStamps";
     } else if (kind === "subBadges") {
       key = "subBadges";
     } else if (kind === "bitsBadges") {
@@ -350,11 +358,17 @@
     var groups = [];
 
     if (state.config.showEmotes) {
-      var sectionOrder = Array.isArray(state.config.emoteSectionOrder) ? state.config.emoteSectionOrder : ["follower", "1000", "2000", "3000"];
+      var sectionOrder = Array.isArray(state.config.emoteSectionOrder) ? state.config.emoteSectionOrder : ["follower", "1000", "2000", "3000", "cheer"];
       sectionOrder.forEach(function (sectionId) {
         if (sectionId === "follower") {
           if (state.config.showFollowerStamps) {
             groups.push(toToggleGroup("Follower", model.followerEmotes || [], "followerStamps", ""));
+          }
+          return;
+        }
+        if (sectionId === "cheer") {
+          if (state.config.showCheermotes) {
+            groups.push(toToggleGroup("Cheermotes", model.cheerEmotes || [], "cheerStamps", ""));
           }
           return;
         }
@@ -395,6 +409,8 @@
       key = "emotes" + tier;
     } else if (kind === "followerStamps") {
       key = "followerStamps";
+    } else if (kind === "cheerStamps") {
+      key = "cheerStamps";
     } else if (kind === "subBadges") {
       key = "subBadges";
     } else if (kind === "bitsBadges") {
@@ -465,6 +481,11 @@
 
     if (payload.kind === "followerStamps") {
       state.config.followerEmoteOrder = moveIdInList(baseOrder.length ? baseOrder : state.config.followerEmoteOrder, payload.fromId, payload.toId);
+      return;
+    }
+
+    if (payload.kind === "cheerStamps") {
+      state.config.cheermoteOrder = moveIdInList(baseOrder.length ? baseOrder : state.config.cheermoteOrder, payload.fromId, payload.toId);
       return;
     }
 
@@ -570,6 +591,53 @@
     };
   }
 
+  function pickCheermoteImage(source) {
+    if (!source || typeof source !== "object") {
+      return "";
+    }
+    var preferredScales = ["4", "3", "2", "1.5", "1"];
+    for (var i = 0; i < preferredScales.length; i += 1) {
+      var scaleKey = preferredScales[i];
+      if (source[scaleKey]) {
+        return source[scaleKey];
+      }
+    }
+    return "";
+  }
+
+  function pickCheermoteThemeVariant(images, themeMode, animated) {
+    if (!images || typeof images !== "object") {
+      return "";
+    }
+    var mode = images[themeMode] || images.dark || images.light || {};
+    var group = animated ? (mode.animated || {}) : (mode.static || {});
+    return pickCheermoteImage(group);
+  }
+
+  function normalizeCheermotes(items) {
+    var cheermotes = [];
+    (items || []).forEach(function (item) {
+      var prefix = String(item.prefix || "Cheer");
+      (item.tiers || []).forEach(function (tier) {
+        var minBits = String(tier.min_bits || tier.id || "");
+        var animatedUrl = pickCheermoteThemeVariant(tier.images, "dark", true) || pickCheermoteThemeVariant(tier.images, "light", true);
+        var staticUrl = pickCheermoteThemeVariant(tier.images, "dark", false) || pickCheermoteThemeVariant(tier.images, "light", false);
+        var imageUrl = animatedUrl || staticUrl;
+        if (!imageUrl) {
+          return;
+        }
+        cheermotes.push({
+          id: String(tier.id || (prefix + "-" + minBits)),
+          name: prefix + " " + minBits,
+          imageUrl: staticUrl || imageUrl,
+          animatedImageUrl: animatedUrl || "",
+          staticImageUrl: staticUrl || imageUrl
+        });
+      });
+    });
+    return cheermotes;
+  }
+
   async function fetchLiveData() {
     if (!state.auth) {
       return;
@@ -578,9 +646,20 @@
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var normalizedEmotes = normalizeEmotes(emotesResponse.data, emotesResponse);
     var badges = normalizeBadges(badgesResponse.data);
+    var cheerEmotes = [];
+
+    try {
+      var cheermotesResponse = await callHelix("/bits/cheermotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
+      cheerEmotes = normalizeCheermotes(cheermotesResponse.data);
+    } catch (error) {
+      // Keep config usable if only cheermotes retrieval fails.
+      console.warn("Cheermotes fetch failed:", error);
+    }
+
     state.data = {
       emotesByTier: normalizedEmotes.emotesByTier,
       followerEmotes: normalizedEmotes.followerEmotes,
+      cheerEmotes: cheerEmotes,
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
     };
@@ -683,6 +762,12 @@
         { id: "follower-wave", name: "FollowerWave", images: demoStampImage("follower-wave.svg") },
         { id: "follower-heart", name: "FollowerHeart", images: demoStampImage("follower-heart.svg") },
         { id: "follower-hype", name: "FollowerHype", images: demoStampImage("follower-hype.svg") }
+      ],
+      cheerEmotes: [
+        { id: "cheer-1", name: "Cheer 1", imageUrl: demoBadgeImage("bits-100.svg") },
+        { id: "cheer-100", name: "Cheer 100", imageUrl: demoBadgeImage("bits-1000.svg") },
+        { id: "cheer-1000", name: "Cheer 1000", imageUrl: demoBadgeImage("bits-5000.svg") },
+        { id: "cheer-5000", name: "Cheer 5000", imageUrl: demoBadgeImage("bits-10000.svg") }
       ],
       subBadges: [
         { id: "1", title: "Subscriber 1", description: "1 month", imageUrl: demoBadgeImage("sub-1.svg") },

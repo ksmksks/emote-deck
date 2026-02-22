@@ -5,6 +5,7 @@
     showEmotes: true,
     showBadges: true,
     showFollowerStamps: true,
+    showCheermotes: true,
     showTier1000: true,
     showTier2000: true,
     showTier3000: true,
@@ -23,6 +24,7 @@
       "3000": []
     },
     followerEmoteOrder: [],
+    cheermoteOrder: [],
     subBadgeOrder: [],
     bitsBadgeOrder: [],
     hiddenStampIds: {
@@ -30,10 +32,11 @@
       emotes2000: [],
       emotes3000: [],
       followerStamps: [],
+      cheerStamps: [],
       subBadges: [],
       bitsBadges: []
     },
-    emoteSectionOrder: ["follower", "1000", "2000", "3000"],
+    emoteSectionOrder: ["follower", "1000", "2000", "3000", "cheer"],
     columns: 3,
     emoteSize: 84,
     itemPadding: 10,
@@ -112,7 +115,7 @@
   }
 
   function normalizeSectionOrder(raw) {
-    var allowed = ["follower", "1000", "2000", "3000"];
+    var allowed = ["follower", "1000", "2000", "3000", "cheer"];
     if (!Array.isArray(raw)) {
       return allowed.slice();
     }
@@ -141,6 +144,7 @@
       emotes2000: normalizeIdList(src.emotes2000),
       emotes3000: normalizeIdList(src.emotes3000),
       followerStamps: normalizeIdList(src.followerStamps),
+      cheerStamps: normalizeIdList(src.cheerStamps),
       subBadges: normalizeIdList(src.subBadges),
       bitsBadges: normalizeIdList(src.bitsBadges)
     };
@@ -224,6 +228,7 @@
     cfg.showEmotes = cfg.showEmotes !== false;
     cfg.showBadges = cfg.showBadges !== false;
     cfg.showFollowerStamps = cfg.showFollowerStamps !== false;
+    cfg.showCheermotes = cfg.showCheermotes !== false;
     cfg.showTier1000 = cfg.showTier1000 !== false;
     cfg.showTier2000 = cfg.showTier2000 !== false;
     cfg.showTier3000 = cfg.showTier3000 !== false;
@@ -261,6 +266,7 @@
     cfg.emoteOrderByTier = normalizeOrderByTier(cfg.emoteOrderByTier);
     cfg.emoteSectionOrder = normalizeSectionOrder(cfg.emoteSectionOrder);
     cfg.followerEmoteOrder = normalizeIdList(cfg.followerEmoteOrder);
+    cfg.cheermoteOrder = normalizeIdList(cfg.cheermoteOrder);
     cfg.subBadgeOrder = normalizeIdList(cfg.subBadgeOrder);
     cfg.bitsBadgeOrder = normalizeIdList(cfg.bitsBadgeOrder);
     cfg.hiddenStampIds = normalizeHiddenStampIds(cfg.hiddenStampIds);
@@ -284,6 +290,7 @@
         "3000": []
       },
       followerEmotes: [],
+      cheerEmotes: [],
       subBadges: [],
       bitsBadges: []
     };
@@ -313,6 +320,7 @@
     if (Array.isArray(rawData.followerEmotes)) {
       model.followerEmotes = rawData.followerEmotes;
     }
+    model.cheerEmotes = Array.isArray(rawData.cheerEmotes) ? rawData.cheerEmotes : [];
     model.subBadges = Array.isArray(rawData.subBadges) ? rawData.subBadges : [];
     model.bitsBadges = Array.isArray(rawData.bitsBadges) ? rawData.bitsBadges : [];
     return model;
@@ -493,6 +501,22 @@
     return "";
   }
 
+  function resolveStampImageUrls(stamp) {
+    var animatedUrl = buildAnimatedEmoteUrl(stamp);
+    var fallbackUrl = pickImage(stamp && stamp.images, stamp && stamp.imageUrl) || buildStaticEmoteUrl(stamp);
+    if (!animatedUrl && stamp && stamp.animatedImageUrl) {
+      animatedUrl = String(stamp.animatedImageUrl);
+    }
+    if (stamp && stamp.staticImageUrl && (!fallbackUrl || (animatedUrl && fallbackUrl === animatedUrl))) {
+      fallbackUrl = String(stamp.staticImageUrl);
+    }
+    return {
+      animatedUrl: animatedUrl || "",
+      fallbackUrl: fallbackUrl || "",
+      imageUrl: animatedUrl || fallbackUrl || ""
+    };
+  }
+
   function getItemId(item) {
     return String((item && (item.id || item.name)) || "");
   }
@@ -545,6 +569,9 @@
     if (kind === "followerStamps") {
       return "followerStamps";
     }
+    if (kind === "cheerStamps") {
+      return "cheerStamps";
+    }
     if (kind === "subBadges") {
       return "subBadges";
     }
@@ -572,7 +599,7 @@
     var tierNames = { "1000": "Tier 1", "2000": "Tier 2", "3000": "Tier 3" };
     var html = "";
     var total = 0;
-    var sectionOrder = Array.isArray(cfg.emoteSectionOrder) ? cfg.emoteSectionOrder : ["follower", "1000", "2000", "3000"];
+    var sectionOrder = Array.isArray(cfg.emoteSectionOrder) ? cfg.emoteSectionOrder : ["follower", "1000", "2000", "3000", "cheer"];
 
     sectionOrder.forEach(function (sectionId) {
       if (sectionId === "follower") {
@@ -591,9 +618,10 @@
         } else {
           html += '<div class="ed-grid">';
           followers.forEach(function (emote) {
-            var animatedUrl = buildAnimatedEmoteUrl(emote);
-            var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
-            var imageUrl = animatedUrl || fallbackUrl;
+            var urls = resolveStampImageUrls(emote);
+            var animatedUrl = urls.animatedUrl;
+            var fallbackUrl = urls.fallbackUrl;
+            var imageUrl = urls.imageUrl;
             var emoteName = escapeHtml(emote.name || emote.id || "follower");
             html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
             if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
@@ -603,6 +631,44 @@
             }
             if (cfg.showEmoteNames) {
               html += '<p class="ed-label">' + emoteName + "</p>";
+            }
+            html += "</article>";
+          });
+          html += "</div>";
+        }
+        html += "</section>";
+        return;
+      }
+
+      if (sectionId === "cheer") {
+        if (!cfg.showCheermotes) {
+          return;
+        }
+        var cheerStamps = sortByOrder(model.cheerEmotes || [], cfg.cheermoteOrder);
+        cheerStamps = cheerStamps.filter(function (item) {
+          return !isHiddenStamp(cfg, "cheerStamps", "", item);
+        });
+        total += cheerStamps.length;
+        html += '<section class="ed-tier">';
+        html += '<h3 class="ed-tier-title" data-ed-section-kind="emoteSections" data-ed-section-id="cheer">Cheermotes</h3>';
+        if (!cheerStamps.length) {
+          html += renderEmptyState("No cheermotes found.");
+        } else {
+          html += '<div class="ed-grid">';
+          cheerStamps.forEach(function (item) {
+            var itemUrls = resolveStampImageUrls(item);
+            var animated = itemUrls.animatedUrl;
+            var fallback = itemUrls.fallbackUrl;
+            var image = itemUrls.imageUrl;
+            var itemName = escapeHtml(item.name || item.title || item.id || "cheermote");
+            html += '<article class="ed-item ed-item--emote" data-ed-kind="cheerStamps" data-ed-id="' + escapeHtml(getItemId(item)) + '">';
+            if (animated && fallback && animated !== fallback) {
+              html += '<img class="ed-image" src="' + escapeHtml(image) + '" data-ed-fallback-src="' + escapeHtml(fallback) + '" alt="' + itemName + '" loading="lazy">';
+            } else {
+              html += '<img class="ed-image" src="' + escapeHtml(image) + '" alt="' + itemName + '" loading="lazy">';
+            }
+            if (cfg.showEmoteNames) {
+              html += '<p class="ed-label">' + itemName + "</p>";
             }
             html += "</article>";
           });
@@ -628,9 +694,10 @@
       } else {
         html += '<div class="ed-grid">';
         emotes.forEach(function (emote) {
-          var animatedUrl = buildAnimatedEmoteUrl(emote);
-          var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
-          var imageUrl = animatedUrl || fallbackUrl;
+          var urls = resolveStampImageUrls(emote);
+          var animatedUrl = urls.animatedUrl;
+          var fallbackUrl = urls.fallbackUrl;
+          var imageUrl = urls.imageUrl;
           var emoteName = escapeHtml(emote.name || emote.id || "emote");
           html += '<article class="ed-item ed-item--emote" data-ed-kind="emotes" data-ed-tier="' + tier + '" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
           if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
@@ -665,9 +732,10 @@
 
     var html = '<div class="ed-grid">';
     ordered.forEach(function (emote) {
-      var animatedUrl = buildAnimatedEmoteUrl(emote);
-      var fallbackUrl = pickImage(emote.images, emote.imageUrl) || buildStaticEmoteUrl(emote);
-      var imageUrl = animatedUrl || fallbackUrl;
+      var urls = resolveStampImageUrls(emote);
+      var animatedUrl = urls.animatedUrl;
+      var fallbackUrl = urls.fallbackUrl;
+      var imageUrl = urls.imageUrl;
       var emoteName = escapeHtml(emote.name || emote.id || "follower");
       html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
       if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {

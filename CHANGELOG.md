@@ -2,17 +2,18 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0-rc.1] - 2026-02-22
+- Added Cheermotes fetching via Helix `GET /bits/cheermotes` using Extension JWT (`auth.helixToken`) in both panel and config preview flows.
+- Added `showCheermotes` visibility control and `cheermoteOrder` persistence support.
+- Added Cheermotes section rendering inside `Stamps` tab (no extra tab), including drag-and-drop sorting and individual visibility toggles.
+- Added cheermote image normalization with animated/static fallback handling.
+
 ## [1.0.1] - 2026-02-22
 - Adjusted panel root/shell height handling (`100%` based) and body overflow behavior to reduce external iframe scrollbars on channel profile panel.
 - Ensured footer stays at the bottom even when the number of stamps/badges is small and content height is short.
 - Added a release roadmap to separate patch stabilization (`1.0.1`) from the upcoming feature release line (`1.1.0-rc.1` -> `1.1.0`).
 
 ## Roadmap
-### [1.1.0-rc.1] - planned
-- Add Cheermotes in the `Stamps` tab (no extra tab), including Config visibility toggle.
-- Support per-cheermote individual visibility control and drag-and-drop ordering.
-- Keep failure isolation so cheermote fetch errors do not break existing emotes/badges rendering.
-
 ### [1.1.0] - planned
 - Reorganize name display toggles (`Stamps Names` / `Badges Names`) into a dedicated interaction/settings group.
 - Add configurable label font size controls.
