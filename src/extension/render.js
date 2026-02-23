@@ -13,6 +13,11 @@
     showBitsBadges: true,
     showEmoteNames: true,
     showBadgeNames: true,
+    emoteNameSize: 10,
+    badgeNameSize: 10,
+    showHoverTooltip: true,
+    enableStampNameCopy: true,
+    fontFamily: "trebuchet",
     headerTitle: "EmoteDeck",
     headerColor: "#1b3f5f",
     footerColor: "#4a2746",
@@ -74,6 +79,19 @@
   };
 
   var TIER_KEYS = ["1000", "2000", "3000"];
+  var FONT_FAMILIES = {
+    trebuchet: '"Trebuchet MS", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
+    segoe: '"Segoe UI", "Trebuchet MS", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
+    gothic: '"Hiragino Kaku Gothic ProN", "Meiryo", "Trebuchet MS", "Segoe UI", sans-serif',
+    rounded: '"Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", "Meiryo", "Segoe UI", sans-serif',
+    mono: '"Consolas", "SFMono-Regular", "Menlo", "Courier New", "Meiryo", monospace',
+    serif: '"Georgia", "Times New Roman", "Yu Mincho", "Hiragino Mincho ProN", serif',
+    condensed: '"Bahnschrift", "Arial Narrow", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
+    genericSerif: 'serif',
+    genericMono: 'monospace',
+    genericCursive: 'cursive',
+    genericFantasy: 'fantasy'
+  };
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -239,6 +257,9 @@
     var legacyShowNames = cfg.showStampNames !== false;
     cfg.showEmoteNames = hasShowEmoteNames ? cfg.showEmoteNames : legacyShowNames;
     cfg.showBadgeNames = hasShowBadgeNames ? cfg.showBadgeNames : legacyShowNames;
+    cfg.showHoverTooltip = cfg.showHoverTooltip !== false;
+    cfg.enableStampNameCopy = cfg.enableStampNameCopy !== false;
+    cfg.fontFamily = Object.prototype.hasOwnProperty.call(FONT_FAMILIES, cfg.fontFamily) ? cfg.fontFamily : DEFAULT_CONFIG.fontFamily;
     if (!cfg.showBadges) {
       cfg.showSubBadges = false;
       cfg.showBitsBadges = false;
@@ -247,6 +268,8 @@
 
     cfg.columns = clamp(parseIntOrDefault(cfg.columns, DEFAULT_CONFIG.columns), 1, 8);
     cfg.emoteSize = clamp(parseIntOrDefault(cfg.emoteSize, DEFAULT_CONFIG.emoteSize), 40, 100);
+    cfg.emoteNameSize = clamp(parseIntOrDefault(cfg.emoteNameSize, DEFAULT_CONFIG.emoteNameSize), 8, 18);
+    cfg.badgeNameSize = clamp(parseIntOrDefault(cfg.badgeNameSize, DEFAULT_CONFIG.badgeNameSize), 8, 18);
     cfg.itemPadding = clamp(parseIntOrDefault(cfg.itemPadding, DEFAULT_CONFIG.itemPadding), 0, 24);
     cfg.itemGap = clamp(parseIntOrDefault(cfg.itemGap, DEFAULT_CONFIG.itemGap), 0, 24);
     cfg.borderRadius = clamp(parseIntOrDefault(cfg.borderRadius, DEFAULT_CONFIG.borderRadius), 0, 24);
@@ -341,6 +364,7 @@
   function applyThemeVariables(cfg) {
     var theme = resolveTheme(cfg);
     var root = document.documentElement;
+    var fontFamily = FONT_FAMILIES[cfg.fontFamily] || FONT_FAMILIES[DEFAULT_CONFIG.fontFamily];
     var textColor = getContrastingTextColor(theme.background);
     var headerTextColor = getContrastingTextColor(cfg.headerColor);
     var footerTextColor = getContrastingTextColor(cfg.footerColor);
@@ -373,6 +397,7 @@
     root.style.setProperty("--header-glow", hexToRgba(cfg.headerColor, 0.38));
     root.style.setProperty("--footer-glow", hexToRgba(cfg.footerColor, 0.38));
     root.style.setProperty("--tab-active-text", activeTextColor);
+    root.style.setProperty("--font-family", fontFamily);
 
     if (headerIsLight) {
       root.style.setProperty("--header-grad-start", mixHex(cfg.headerColor, "#ffffff", 0.06, 1));
@@ -419,6 +444,14 @@
       root.style.setProperty("--tab-hover-shadow", "var(--accent-glow)");
       root.style.setProperty("--tab-inner-ring", "rgba(255,255,255,0.06)");
     }
+
+    // Keep tooltip colors aligned with the inactive tab palette for theme consistency.
+    root.style.setProperty("--tooltip-border", "var(--tab-border)");
+    root.style.setProperty("--tooltip-bg-start", "var(--tab-bg-start)");
+    root.style.setProperty("--tooltip-bg-mid", "var(--tab-bg-mid)");
+    root.style.setProperty("--tooltip-bg-end", "var(--tab-bg-end)");
+    root.style.setProperty("--tooltip-text", "var(--tab-text)");
+    root.style.setProperty("--tooltip-shadow", "var(--tab-shadow)");
   }
 
   function getEnabledTabs(cfg) {
@@ -622,8 +655,11 @@
             var animatedUrl = urls.animatedUrl;
             var fallbackUrl = urls.fallbackUrl;
             var imageUrl = urls.imageUrl;
-            var emoteName = escapeHtml(emote.name || emote.id || "follower");
-            html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
+            var rawEmoteName = String(emote.name || emote.id || "follower");
+            var emoteName = escapeHtml(rawEmoteName);
+            var tooltipAttr = cfg.showHoverTooltip ? ' data-ed-tooltip="' + escapeHtml(rawEmoteName) + '"' : "";
+            var copyAttr = (cfg.enableStampNameCopy && !cfg.enableDragSort) ? ' data-ed-copy="' + escapeHtml(rawEmoteName) + '"' : "";
+            html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '"' + tooltipAttr + copyAttr + ">";
             if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
               html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
             } else {
@@ -660,8 +696,11 @@
             var animated = itemUrls.animatedUrl;
             var fallback = itemUrls.fallbackUrl;
             var image = itemUrls.imageUrl;
-            var itemName = escapeHtml(item.name || item.title || item.id || "cheermote");
-            html += '<article class="ed-item ed-item--emote" data-ed-kind="cheerStamps" data-ed-id="' + escapeHtml(getItemId(item)) + '">';
+            var rawItemName = String(item.name || item.title || item.id || "cheermote");
+            var itemName = escapeHtml(rawItemName);
+            var cheerTooltipAttr = cfg.showHoverTooltip ? ' data-ed-tooltip="' + escapeHtml(rawItemName) + '"' : "";
+            var cheerCopyAttr = (cfg.enableStampNameCopy && !cfg.enableDragSort) ? ' data-ed-copy="' + escapeHtml(rawItemName) + '"' : "";
+            html += '<article class="ed-item ed-item--emote" data-ed-kind="cheerStamps" data-ed-id="' + escapeHtml(getItemId(item)) + '"' + cheerTooltipAttr + cheerCopyAttr + ">";
             if (animated && fallback && animated !== fallback) {
               html += '<img class="ed-image" src="' + escapeHtml(image) + '" data-ed-fallback-src="' + escapeHtml(fallback) + '" alt="' + itemName + '" loading="lazy">';
             } else {
@@ -698,8 +737,11 @@
           var animatedUrl = urls.animatedUrl;
           var fallbackUrl = urls.fallbackUrl;
           var imageUrl = urls.imageUrl;
-          var emoteName = escapeHtml(emote.name || emote.id || "emote");
-          html += '<article class="ed-item ed-item--emote" data-ed-kind="emotes" data-ed-tier="' + tier + '" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
+          var rawTierEmoteName = String(emote.name || emote.id || "emote");
+          var emoteName = escapeHtml(rawTierEmoteName);
+          var tierTooltipAttr = cfg.showHoverTooltip ? ' data-ed-tooltip="' + escapeHtml(rawTierEmoteName) + '"' : "";
+          var tierCopyAttr = (cfg.enableStampNameCopy && !cfg.enableDragSort) ? ' data-ed-copy="' + escapeHtml(rawTierEmoteName) + '"' : "";
+          html += '<article class="ed-item ed-item--emote" data-ed-kind="emotes" data-ed-tier="' + tier + '" data-ed-id="' + escapeHtml(getItemId(emote)) + '"' + tierTooltipAttr + tierCopyAttr + ">";
           if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
             html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
           } else {
@@ -736,8 +778,11 @@
       var animatedUrl = urls.animatedUrl;
       var fallbackUrl = urls.fallbackUrl;
       var imageUrl = urls.imageUrl;
-      var emoteName = escapeHtml(emote.name || emote.id || "follower");
-      html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '">';
+      var rawEmoteName = String(emote.name || emote.id || "follower");
+      var emoteName = escapeHtml(rawEmoteName);
+      var tooltipAttr = cfg.showHoverTooltip ? ' data-ed-tooltip="' + escapeHtml(rawEmoteName) + '"' : "";
+      var copyAttr = (cfg.enableStampNameCopy && !cfg.enableDragSort) ? ' data-ed-copy="' + escapeHtml(rawEmoteName) + '"' : "";
+      html += '<article class="ed-item ed-item--emote" data-ed-kind="followerStamps" data-ed-id="' + escapeHtml(getItemId(emote)) + '"' + tooltipAttr + copyAttr + ">";
       if (animatedUrl && fallbackUrl && animatedUrl !== fallbackUrl) {
         html += '<img class="ed-image" src="' + escapeHtml(imageUrl) + '" data-ed-fallback-src="' + escapeHtml(fallbackUrl) + '" alt="' + emoteName + '" loading="lazy">';
       } else {
@@ -765,10 +810,12 @@
 
     var html = '<div class="ed-grid">';
     ordered.forEach(function (badge) {
-      var title = escapeHtml(badge.title || badge.id || "badge");
+      var rawTitle = String(badge.title || badge.id || "badge");
+      var title = escapeHtml(rawTitle);
       var desc = escapeHtml(badge.description || "");
       var imageUrl = escapeHtml(badge.imageUrl || "");
-      html += '<article class="ed-item ed-item--badge" data-ed-kind="' + escapeHtml(badgeKind) + '" data-ed-id="' + escapeHtml(getItemId(badge)) + '">';
+      var tooltipAttr = cfg.showHoverTooltip ? ' data-ed-tooltip="' + escapeHtml(rawTitle) + '"' : "";
+      html += '<article class="ed-item ed-item--badge" data-ed-kind="' + escapeHtml(badgeKind) + '" data-ed-id="' + escapeHtml(getItemId(badge)) + '"' + tooltipAttr + ">";
       html += '<img class="ed-image" src="' + imageUrl + '" alt="' + title + '" loading="lazy">';
       if (cfg.showBadgeNames) {
         html += '<p class="ed-label">' + title + "</p>";
@@ -809,6 +856,172 @@
     return html;
   }
 
+  function clearHoverTooltip(container) {
+    if (container && typeof container.__edTooltipCleanup === "function") {
+      container.__edTooltipCleanup();
+      container.__edTooltipCleanup = null;
+    }
+  }
+
+  function wireHoverTooltip(container, cfg) {
+    clearHoverTooltip(container);
+    if (!cfg.showHoverTooltip) {
+      return;
+    }
+
+    var shell = container.querySelector(".ed-shell");
+    if (!shell) {
+      return;
+    }
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "ed-hover-tooltip";
+    shell.appendChild(tooltip);
+
+    var listeners = [];
+    var currentText = "";
+
+    function setPosition(clientX, clientY) {
+      var rect = shell.getBoundingClientRect();
+      var x = clientX - rect.left + 12;
+      var y = clientY - rect.top + 12;
+      var width = tooltip.offsetWidth || 120;
+      var height = tooltip.offsetHeight || 28;
+      var maxX = shell.clientWidth - width - 6;
+      var maxY = shell.clientHeight - height - 6;
+      x = Math.max(6, Math.min(maxX, x));
+      y = Math.max(6, Math.min(maxY, y));
+      tooltip.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px)";
+    }
+
+    function show(text, event) {
+      currentText = text;
+      tooltip.textContent = currentText;
+      tooltip.classList.add("is-visible");
+      setPosition(event.clientX, event.clientY);
+    }
+
+    function move(event) {
+      if (!currentText) {
+        return;
+      }
+      setPosition(event.clientX, event.clientY);
+    }
+
+    function hide() {
+      currentText = "";
+      tooltip.classList.remove("is-visible");
+    }
+
+    Array.prototype.forEach.call(shell.querySelectorAll(".ed-item[data-ed-tooltip]"), function (item) {
+      var text = item.getAttribute("data-ed-tooltip") || "";
+      if (!text) {
+        return;
+      }
+
+      var onEnter = function (event) {
+        show(text, event);
+      };
+      var onMove = function (event) {
+        move(event);
+      };
+      var onLeave = function () {
+        hide();
+      };
+      var onFocus = function () {
+        var rect = item.getBoundingClientRect();
+        show(text, { clientX: rect.left + rect.width / 2, clientY: rect.top + 4 });
+      };
+
+      item.addEventListener("mouseenter", onEnter);
+      item.addEventListener("mousemove", onMove);
+      item.addEventListener("mouseleave", onLeave);
+      item.addEventListener("focusin", onFocus);
+      item.addEventListener("focusout", onLeave);
+
+      listeners.push(function () { item.removeEventListener("mouseenter", onEnter); });
+      listeners.push(function () { item.removeEventListener("mousemove", onMove); });
+      listeners.push(function () { item.removeEventListener("mouseleave", onLeave); });
+      listeners.push(function () { item.removeEventListener("focusin", onFocus); });
+      listeners.push(function () { item.removeEventListener("focusout", onLeave); });
+    });
+
+    container.__edTooltipCleanup = function () {
+      listeners.forEach(function (off) { off(); });
+      listeners = [];
+      if (tooltip.parentNode) {
+        tooltip.parentNode.removeChild(tooltip);
+      }
+    };
+  }
+
+  function copyTextToClipboard(text) {
+    if (!text) {
+      return Promise.reject(new Error("empty text"));
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      try {
+        var textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "readonly");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        var copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        if (copied) {
+          resolve();
+        } else {
+          reject(new Error("copy command failed"));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function showCopyToast(item, message) {
+    if (!item) {
+      return;
+    }
+    var old = item.querySelector(".ed-copy-toast");
+    if (old && old.parentNode) {
+      old.parentNode.removeChild(old);
+    }
+    var toast = document.createElement("span");
+    toast.className = "ed-copy-toast";
+    toast.textContent = message;
+    item.appendChild(toast);
+    setTimeout(function () {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 900);
+  }
+
+  function wireStampCopy(container, cfg) {
+    if (!cfg.enableStampNameCopy || cfg.enableDragSort) {
+      return;
+    }
+    Array.prototype.forEach.call(container.querySelectorAll(".ed-item--emote[data-ed-copy]"), function (item) {
+      item.addEventListener("click", function () {
+        var text = item.getAttribute("data-ed-copy") || "";
+        if (!text) {
+          return;
+        }
+        copyTextToClipboard(text).then(function () {
+          showCopyToast(item, "Copy!");
+        }).catch(function () {
+          showCopyToast(item, "Copy failed");
+        });
+      });
+    });
+  }
+
   function render(container, rawData, rawConfig) {
     if (!container) {
       return;
@@ -827,8 +1040,12 @@
     container.style.setProperty("--item-padding", cfg.itemPadding + "px");
     container.style.setProperty("--item-gap", cfg.itemGap + "px");
     container.style.setProperty("--item-frame-size", layout.frameSize + "px");
-    container.style.setProperty("--emote-label-space", cfg.showEmoteNames ? "30px" : "6px");
-    container.style.setProperty("--badge-label-space", cfg.showBadgeNames ? "30px" : "6px");
+    container.style.setProperty("--emote-label-size", cfg.emoteNameSize + "px");
+    container.style.setProperty("--badge-label-size", cfg.badgeNameSize + "px");
+    var emoteLabelSpace = cfg.showEmoteNames ? Math.round(cfg.emoteNameSize * 2.6 + 10) : 6;
+    var badgeLabelSpace = cfg.showBadgeNames ? Math.round(cfg.badgeNameSize * 3.4 + 18) : 6;
+    container.style.setProperty("--emote-label-space", emoteLabelSpace + "px");
+    container.style.setProperty("--badge-label-space", badgeLabelSpace + "px");
     var footerHtml = '<footer class="ed-footer">' +
       '<p class="ed-footer-row">' +
       '<span class="ed-footer-text">EmoteDeck Panel</span>' +
@@ -836,6 +1053,7 @@
       "</p>" +
       "</footer>";
 
+    clearHoverTooltip(container);
     var tabs = getEnabledTabs(cfg);
     if (!tabs.length) {
       container.innerHTML = '<section class="ed-shell">' +
@@ -896,6 +1114,9 @@
         img.removeEventListener("error", onError);
       });
     });
+
+    wireStampCopy(container, cfg);
+    wireHoverTooltip(container, cfg);
 
     if (cfg.enableDragSort && typeof cfg.onOrderChange === "function") {
       wireDragAndDrop(container, cfg);

@@ -48,11 +48,6 @@
               </label>
 
               <label class="control checkbox checkbox-child">
-                <input id="showCheermotes" type="checkbox" checked>
-                <span>Cheermotes</span>
-              </label>
-
-              <label class="control checkbox checkbox-child">
                 <input id="showTier1000" type="checkbox" checked>
                 <span>Tier 1</span>
               </label>
@@ -68,8 +63,8 @@
               </label>
 
               <label class="control checkbox checkbox-child">
-                <input id="showEmoteNames" type="checkbox" checked>
-                <span>Names</span>
+                <input id="showCheermotes" type="checkbox" checked>
+                <span>Cheermotes</span>
               </label>
             </div>
 
@@ -88,12 +83,63 @@
                 <input id="showBitsBadges" type="checkbox" checked>
                 <span>Bits Badges</span>
               </label>
-
-              <label class="control checkbox checkbox-child">
-                <input id="showBadgeNames" type="checkbox" checked>
-                <span>Names</span>
-              </label>
             </div>
+          </fieldset>
+
+          <fieldset class="control-group">
+            <legend>Labels and Interactions</legend>
+            <label class="control checkbox">
+              <input id="showEmoteNames" type="checkbox" checked>
+              <span>Stamps Names</span>
+            </label>
+
+            <label class="control">
+              <span>stampsNameSize</span>
+              <div class="range-wrap">
+                <input id="emoteNameSize" type="range" min="8" max="18" step="1" value="10">
+                <output id="emoteNameSizeValue">10</output>
+              </div>
+            </label>
+
+            <label class="control checkbox">
+              <input id="showBadgeNames" type="checkbox" checked>
+              <span>Badges Names</span>
+            </label>
+
+            <label class="control">
+              <span>badgesNameSize</span>
+              <div class="range-wrap">
+                <input id="badgeNameSize" type="range" min="8" max="18" step="1" value="10">
+                <output id="badgeNameSizeValue">10</output>
+              </div>
+            </label>
+
+            <label class="control checkbox">
+              <input id="showHoverTooltip" type="checkbox" checked>
+              <span>Hover Tooltip</span>
+            </label>
+
+            <label class="control checkbox">
+              <input id="enableStampNameCopy" type="checkbox" checked>
+              <span>Copy Stamp Name on Click</span>
+            </label>
+
+            <label class="control">
+              <span>fontFamily</span>
+              <select id="fontFamily">
+                <option value="trebuchet">Trebuchet</option>
+                <option value="segoe">Segoe UI</option>
+                <option value="gothic">JP Gothic</option>
+                <option value="rounded">Rounded</option>
+                <option value="mono">Monospace</option>
+                <option value="serif">Serif</option>
+                <option value="condensed">Condensed</option>
+                <option value="genericSerif">Generic Serif</option>
+                <option value="genericMono">Generic Monospace</option>
+                <option value="genericCursive">Generic Cursive</option>
+                <option value="genericFantasy">Generic Fantasy</option>
+              </select>
+            </label>
           </fieldset>
 
           <fieldset class="control-group">

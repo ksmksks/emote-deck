@@ -2,6 +2,17 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0-rc.2] - 2026-02-22
+- Added `Labels and Interactions` settings group and moved `Stamps Names` / `Badges Names` toggles out of Visibility.
+- Added adjustable name label size controls for stamps and badges.
+- Added configurable hover tooltip for stamp/badge names.
+- Added click-to-copy stamp name behavior with `Copy!` feedback bubble.
+- Added configurable panel font family options (`Trebuchet`, `Segoe UI`, `JP Gothic`).
+- Made Config preview pane sticky on desktop so the preview remains visible while scrolling long settings.
+- Reordered `Visibility > Stamps` controls to `Follower`, `Tier 1`, `Tier 2`, `Tier 3`, `Cheermotes`.
+- Center-aligned stamp/badge labels and enabled multiline wrapping with bounds-safe clipping inside cards.
+- Made hover tooltip colors theme-aware and aligned with inactive `Stamps/Badges` tab palette.
+
 ## [1.1.0-rc.1] - 2026-02-22
 - Added Cheermotes fetching via Helix `GET /bits/cheermotes` using Extension JWT (`auth.helixToken`) in both panel and config preview flows.
 - Added `showCheermotes` visibility control and `cheermoteOrder` persistence support.
@@ -14,13 +25,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Added a release roadmap to separate patch stabilization (`1.0.1`) from the upcoming feature release line (`1.1.0-rc.1` -> `1.1.0`).
 
 ## Roadmap
-### [1.1.0] - planned
-- Reorganize name display toggles (`Stamps Names` / `Badges Names`) into a dedicated interaction/settings group.
-- Add configurable label font size controls.
-- Add hover tooltip bubble for stamp/badge names.
-- Add click-to-copy for stamp names with visual feedback (e.g., `Copy!`).
-- Add configurable font family options.
+### [1.1.0-rc.3] - planned
 - Improve mobile popout behavior and platform-specific layout handling for Twitch mobile contexts.
+- Add platform detection fallback: treat missing platform query as web and only switch mobile UI when platform=mobile.
+
+### [1.1.0] - planned
+- Run final regression checks for panel/config rendering and Helix data fetch flows.
+- Finalize release notes and publish as stable 1.1.0.
 
 ## [1.0.0] - 2026-02-16
 - Reworked Visibility settings into parent/child groups for `Stamps` and `Badges`, with separate `Names` toggles for each.

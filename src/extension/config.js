@@ -26,14 +26,19 @@
     "showEmotes",
     "showBadges",
     "showFollowerStamps",
-    "showCheermotes",
     "showTier1000",
     "showTier2000",
     "showTier3000",
+    "showCheermotes",
     "showSubBadges",
     "showBitsBadges",
     "showEmoteNames",
     "showBadgeNames",
+    "emoteNameSize",
+    "badgeNameSize",
+    "showHoverTooltip",
+    "enableStampNameCopy",
+    "fontFamily",
     "hiddenStampIds",
     "emoteSectionOrder",
     "columns",
@@ -57,16 +62,21 @@
     showEmotes: document.getElementById("showEmotes"),
     showBadges: document.getElementById("showBadges"),
     showFollowerStamps: document.getElementById("showFollowerStamps"),
-    showCheermotes: document.getElementById("showCheermotes"),
     showTier1000: document.getElementById("showTier1000"),
     showTier2000: document.getElementById("showTier2000"),
     showTier3000: document.getElementById("showTier3000"),
+    showCheermotes: document.getElementById("showCheermotes"),
     emoteVisibilityChildren: document.getElementById("emoteVisibilityChildren"),
     badgesVisibilityChildren: document.getElementById("badgesVisibilityChildren"),
     showSubBadges: document.getElementById("showSubBadges"),
     showBitsBadges: document.getElementById("showBitsBadges"),
     showEmoteNames: document.getElementById("showEmoteNames"),
     showBadgeNames: document.getElementById("showBadgeNames"),
+    emoteNameSize: document.getElementById("emoteNameSize"),
+    badgeNameSize: document.getElementById("badgeNameSize"),
+    showHoverTooltip: document.getElementById("showHoverTooltip"),
+    enableStampNameCopy: document.getElementById("enableStampNameCopy"),
+    fontFamily: document.getElementById("fontFamily"),
     stampToggleList: document.getElementById("stampToggleList"),
     columns: document.getElementById("columns"),
     emoteSize: document.getElementById("emoteSize"),
@@ -80,6 +90,8 @@
     glowIntensity: document.getElementById("glowIntensity"),
     columnsValue: document.getElementById("columnsValue"),
     emoteSizeValue: document.getElementById("emoteSizeValue"),
+    emoteNameSizeValue: document.getElementById("emoteNameSizeValue"),
+    badgeNameSizeValue: document.getElementById("badgeNameSizeValue"),
     itemPaddingValue: document.getElementById("itemPaddingValue"),
     itemGapValue: document.getElementById("itemGapValue"),
     borderRadiusValue: document.getElementById("borderRadiusValue"),
@@ -136,6 +148,8 @@
     var maxColumns = parseInt(controls.columns.max, 10) || 8;
     controls.columnsValue.textContent = maxColumns < 8 ? (currentColumns + " / " + maxColumns) : String(currentColumns);
     controls.emoteSizeValue.textContent = controls.emoteSize.value + "%";
+    controls.emoteNameSizeValue.textContent = controls.emoteNameSize.value;
+    controls.badgeNameSizeValue.textContent = controls.badgeNameSize.value;
     controls.itemPaddingValue.textContent = controls.itemPadding.value;
     controls.itemGapValue.textContent = controls.itemGap.value;
     controls.borderRadiusValue.textContent = controls.borderRadius.value;
@@ -151,14 +165,19 @@
     controls.showEmotes.checked = !!config.showEmotes;
     controls.showBadges.checked = !!config.showBadges;
     controls.showFollowerStamps.checked = !!config.showFollowerStamps;
-    controls.showCheermotes.checked = !!config.showCheermotes;
     controls.showTier1000.checked = !!config.showTier1000;
     controls.showTier2000.checked = !!config.showTier2000;
     controls.showTier3000.checked = !!config.showTier3000;
+    controls.showCheermotes.checked = !!config.showCheermotes;
     controls.showSubBadges.checked = !!config.showSubBadges;
     controls.showBitsBadges.checked = !!config.showBitsBadges;
     controls.showEmoteNames.checked = !!config.showEmoteNames;
     controls.showBadgeNames.checked = !!config.showBadgeNames;
+    controls.emoteNameSize.value = String(config.emoteNameSize);
+    controls.badgeNameSize.value = String(config.badgeNameSize);
+    controls.showHoverTooltip.checked = !!config.showHoverTooltip;
+    controls.enableStampNameCopy.checked = !!config.enableStampNameCopy;
+    controls.fontFamily.value = config.fontFamily;
     controls.columns.max = "8";
     controls.columns.value = String(config.columns);
     controls.emoteSize.value = String(config.emoteSize);
@@ -184,14 +203,19 @@
       showEmotes: controls.showEmotes.checked,
       showBadges: controls.showBadges.checked,
       showFollowerStamps: controls.showFollowerStamps.checked,
-      showCheermotes: controls.showCheermotes.checked,
       showTier1000: controls.showTier1000.checked,
       showTier2000: controls.showTier2000.checked,
       showTier3000: controls.showTier3000.checked,
+      showCheermotes: controls.showCheermotes.checked,
       showSubBadges: controls.showSubBadges.checked,
       showBitsBadges: controls.showBitsBadges.checked,
       showEmoteNames: controls.showEmoteNames.checked,
       showBadgeNames: controls.showBadgeNames.checked,
+      emoteNameSize: parseInt(controls.emoteNameSize.value, 10),
+      badgeNameSize: parseInt(controls.badgeNameSize.value, 10),
+      showHoverTooltip: controls.showHoverTooltip.checked,
+      enableStampNameCopy: controls.enableStampNameCopy.checked,
+      fontFamily: controls.fontFamily.value,
       columns: parseInt(controls.columns.value, 10),
       emoteSize: parseInt(controls.emoteSize.value, 10),
       itemPadding: parseInt(controls.itemPadding.value, 10),
@@ -269,11 +293,10 @@
     var emotesEnabled = !!controls.showEmotes.checked;
     var emoteChildren = [
       controls.showFollowerStamps,
-      controls.showCheermotes,
       controls.showTier1000,
       controls.showTier2000,
       controls.showTier3000,
-      controls.showEmoteNames
+      controls.showCheermotes
     ];
 
     emoteChildren.forEach(function (input) {
@@ -289,8 +312,7 @@
     var badgesEnabled = !!controls.showBadges.checked;
     var badgeChildren = [
       controls.showSubBadges,
-      controls.showBitsBadges,
-      controls.showBadgeNames
+      controls.showBitsBadges
     ];
 
     badgeChildren.forEach(function (input) {
