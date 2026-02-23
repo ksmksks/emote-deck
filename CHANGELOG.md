@@ -2,6 +2,15 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-02-24
+- Added full `Stamps` support set in one tab: `Follower`, `Tier 1`, `Tier 2`, `Tier 3`, and `Cheermotes`.
+- Switched cheermote data sourcing to Helix `GET /chat/emotes` (`emote_type=bitstier`) for extension-friendly retrieval.
+- Added drag-and-drop ordering and individual visibility toggles for stamps and badges.
+- Improved label UX: separate `Stamps Names` / `Badges Names`, configurable font and label sizes, and multiline clipping-safe rendering.
+- Added hover tooltip and click-to-copy interactions with robust clipboard fallback behavior.
+- Improved mobile rendering behavior: platform-aware layout tuning and content-driven panel flow for Twitch app screens.
+- Improved panel/config visual consistency: theme-aware empty states, clearer copy toast styling, and safer default data loading flow.
+
 ## [1.1.0-rc.4] - 2026-02-24
 - Switched mobile panel rendering to a content-driven (natural height) layout to better match Twitch app panel behavior.
 - Removed mobile fixed-height forcing that could cause content clipping/cut-off on some app screens.
@@ -39,9 +48,8 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Added a release roadmap to separate patch stabilization (`1.0.1`) from the upcoming feature release line (`1.1.0-rc.1` -> `1.1.0`).
 
 ## Roadmap
-### [1.1.0] - planned
-- Run final regression checks for panel/config rendering and Helix data fetch flows.
-- Finalize release notes and publish as stable 1.1.0.
+### [1.1.1] - planned
+- Stabilization and bugfix patch after production feedback (mobile in-app panel edge cases, rendering consistency).
 
 ## [1.0.0] - 2026-02-16
 - Reworked Visibility settings into parent/child groups for `Stamps` and `Badges`, with separate `Names` toggles for each.

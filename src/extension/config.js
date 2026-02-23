@@ -143,6 +143,21 @@
     }
   }
 
+  function hasUsableTwitchContext() {
+    return !!(
+      window.Twitch &&
+      window.Twitch.ext &&
+      typeof window.Twitch.ext.onAuthorized === "function"
+    );
+  }
+
+  function isDebugMode() {
+    var meta = document.querySelector('meta[name="emotedeck-debug"]');
+    var raw = meta ? String(meta.getAttribute("content") || "") : "";
+    var value = raw.trim().toLowerCase();
+    return value === "on" || value === "true" || value === "1" || value === "debug";
+  }
+
   function syncRangeLabels() {
     var currentColumns = parseInt(controls.columns.value, 10) || 1;
     var maxColumns = parseInt(controls.columns.max, 10) || 8;
@@ -784,7 +799,14 @@
   }
 
   async function initTwitchFlow() {
-    if (!window.Twitch || !window.Twitch.ext) {
+    if (isDebugMode()) {
+      state.data = createDemoData();
+      renderPreview();
+      setStatus("DEBUG mode: local demo data is enabled.", false);
+      return;
+    }
+
+    if (!hasUsableTwitchContext()) {
       state.data = createDemoData();
       renderPreview();
       setStatus("Running in local preview mode. Configuration is not persisted.", false);

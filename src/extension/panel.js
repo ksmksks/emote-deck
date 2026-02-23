@@ -132,6 +132,14 @@
     }
   }
 
+  function hasUsableTwitchContext() {
+    return !!(
+      window.Twitch &&
+      window.Twitch.ext &&
+      typeof window.Twitch.ext.onAuthorized === "function"
+    );
+  }
+
   function readConfigFromTwitch() {
     if (!window.Twitch || !window.Twitch.ext || !window.Twitch.ext.configuration) {
       return Object.assign({}, RENDER.defaults);
@@ -324,7 +332,7 @@
     applyPlatformToDom(state.platform);
     applyHostToDom(state.host);
 
-    if (!window.Twitch || !window.Twitch.ext) {
+    if (!hasUsableTwitchContext()) {
       state.data = createDemoData();
       state.showInfoStatus = true;
       if (state.platform === "mobile") {
@@ -347,7 +355,25 @@
       });
     }
 
+    var authResolved = false;
+    var authFallbackTimer = setTimeout(function () {
+      if (authResolved) {
+        return;
+      }
+      authResolved = true;
+      state.data = createDemoData();
+      state.showInfoStatus = true;
+      if (state.platform === "mobile") {
+        setStatus("Demo mode (mobile layout). Helix data requires Twitch extension context.", false, true);
+      } else {
+        setStatus("Running in demo mode outside Twitch.", false, true);
+      }
+      renderPanel();
+    }, 1800);
+
     window.Twitch.ext.onAuthorized(async function (auth) {
+      clearTimeout(authFallbackTimer);
+      authResolved = true;
       state.auth = auth;
       setStatus("Loading from Helix API...", false, state.showInfoStatus);
 
