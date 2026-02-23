@@ -13,11 +13,12 @@
 
   var state = {
     auth: null,
-    data: createDemoData(),
+    data: createEmptyData(),
     config: Object.assign({}, RENDER.defaults),
     activeTab: "emotes",
     showInfoStatus: false,
-    platform: "web"
+    platform: "web",
+    host: "browser"
   };
 
   function setStatus(message, isError, forceShow) {
@@ -46,6 +47,22 @@
     document.documentElement.setAttribute("data-ed-platform", normalized);
     if (document.body) {
       document.body.setAttribute("data-ed-platform", normalized);
+    }
+  }
+
+  function normalizeHost(raw) {
+    return String(raw || "").toLowerCase() === "twitch" ? "twitch" : "browser";
+  }
+
+  function detectHost() {
+    return window.Twitch && window.Twitch.ext ? "twitch" : "browser";
+  }
+
+  function applyHostToDom(host) {
+    var normalized = normalizeHost(host);
+    document.documentElement.setAttribute("data-ed-host", normalized);
+    if (document.body) {
+      document.body.setAttribute("data-ed-host", normalized);
     }
   }
 
@@ -161,8 +178,10 @@
     var responseThemeMode = toArray(responseMeta && (responseMeta.theme_mode || responseMeta.theme_modes));
     var grouped = { "1000": [], "2000": [], "3000": [] };
     var follower = [];
+    var cheermotes = [];
     (items || []).forEach(function (emote) {
       var tier = String(emote.tier || "");
+      var emoteType = String(emote.emote_type || "").toLowerCase();
       var normalized = {
         id: emote.id,
         name: emote.name,
@@ -177,13 +196,18 @@
         grouped[tier].push(normalized);
         return;
       }
-      if (String(emote.emote_type || "").toLowerCase() === "follower") {
+      if (emoteType === "follower") {
         follower.push(normalized);
+        return;
+      }
+      if (emoteType === "bitstier") {
+        cheermotes.push(normalized);
       }
     });
     return {
       emotesByTier: grouped,
-      followerEmotes: follower
+      followerEmotes: follower,
+      cheerEmotes: cheermotes
     };
   }
 
@@ -218,74 +242,28 @@
     };
   }
 
-  function pickCheermoteImage(source) {
-    if (!source || typeof source !== "object") {
-      return "";
-    }
-    var preferredScales = ["4", "3", "2", "1.5", "1"];
-    for (var i = 0; i < preferredScales.length; i += 1) {
-      var scaleKey = preferredScales[i];
-      if (source[scaleKey]) {
-        return source[scaleKey];
-      }
-    }
-    return "";
-  }
-
-  function pickCheermoteThemeVariant(images, themeMode, animated) {
-    if (!images || typeof images !== "object") {
-      return "";
-    }
-    var mode = images[themeMode] || images.dark || images.light || {};
-    var group = animated ? (mode.animated || {}) : (mode.static || {});
-    return pickCheermoteImage(group);
-  }
-
-  function normalizeCheermotes(items) {
-    var cheermotes = [];
-    (items || []).forEach(function (item) {
-      var prefix = String(item.prefix || "Cheer");
-      (item.tiers || []).forEach(function (tier) {
-        var minBits = String(tier.min_bits || tier.id || "");
-        var animatedUrl = pickCheermoteThemeVariant(tier.images, "dark", true) || pickCheermoteThemeVariant(tier.images, "light", true);
-        var staticUrl = pickCheermoteThemeVariant(tier.images, "dark", false) || pickCheermoteThemeVariant(tier.images, "light", false);
-        var imageUrl = animatedUrl || staticUrl;
-        if (!imageUrl) {
-          return;
-        }
-        cheermotes.push({
-          id: String(tier.id || (prefix + "-" + minBits)),
-          name: prefix + " " + minBits,
-          imageUrl: staticUrl || imageUrl,
-          animatedImageUrl: animatedUrl || "",
-          staticImageUrl: staticUrl || imageUrl
-        });
-      });
-    });
-    return cheermotes;
-  }
-
   async function fetchAllData() {
     var emotesResponse = await callHelix("/chat/emotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var normalizedEmotes = normalizeEmotes(emotesResponse.data, emotesResponse);
     var badges = normalizeBadges(badgesResponse.data);
-    var cheerEmotes = [];
-
-    try {
-      var cheermotesResponse = await callHelix("/bits/cheermotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
-      cheerEmotes = normalizeCheermotes(cheermotesResponse.data);
-    } catch (error) {
-      // Keep panel rendering if only cheermote retrieval fails.
-      console.warn("Cheermotes fetch failed:", error);
-    }
 
     state.data = {
       emotesByTier: normalizedEmotes.emotesByTier,
       followerEmotes: normalizedEmotes.followerEmotes,
-      cheerEmotes: cheerEmotes,
+      cheerEmotes: normalizedEmotes.cheerEmotes,
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
+    };
+  }
+
+  function createEmptyData() {
+    return {
+      emotesByTier: { "1000": [], "2000": [], "3000": [] },
+      followerEmotes: [],
+      cheerEmotes: [],
+      subBadges: [],
+      bitsBadges: []
     };
   }
 
@@ -342,9 +320,12 @@
 
   async function initTwitchFlow() {
     state.platform = detectPlatformFromQuery();
+    state.host = detectHost();
     applyPlatformToDom(state.platform);
+    applyHostToDom(state.host);
 
     if (!window.Twitch || !window.Twitch.ext) {
+      state.data = createDemoData();
       state.showInfoStatus = true;
       if (state.platform === "mobile") {
         setStatus("Demo mode (mobile layout). Helix data requires Twitch extension context.", false, true);
@@ -356,6 +337,7 @@
     }
 
     state.showInfoStatus = false;
+    state.data = createEmptyData();
     setStatus("", false);
 
     if (window.Twitch.ext.configuration && window.Twitch.ext.configuration.onChanged) {

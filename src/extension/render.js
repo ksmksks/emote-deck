@@ -955,33 +955,39 @@
     };
   }
 
+  function copyUsingExecCommand(text) {
+    try {
+      var textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "readonly");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      var copied = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return !!copied;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function copyTextToClipboard(text) {
     if (!text) {
       return Promise.reject(new Error("empty text"));
     }
     if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-      return navigator.clipboard.writeText(text);
-    }
-    return new Promise(function (resolve, reject) {
-      try {
-        var textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "readonly");
-        textarea.style.position = "fixed";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        var copied = document.execCommand("copy");
-        document.body.removeChild(textarea);
-        if (copied) {
-          resolve();
-        } else {
-          reject(new Error("copy command failed"));
+      return navigator.clipboard.writeText(text).catch(function () {
+        if (copyUsingExecCommand(text)) {
+          return;
         }
-      } catch (error) {
-        reject(error);
-      }
-    });
+        return Promise.reject(new Error("clipboard write blocked"));
+      });
+    }
+    if (copyUsingExecCommand(text)) {
+      return Promise.resolve();
+    }
+    return Promise.reject(new Error("copy command failed"));
   }
 
   function showCopyToast(item, message) {
@@ -1016,7 +1022,11 @@
         copyTextToClipboard(text).then(function () {
           showCopyToast(item, "Copy!");
         }).catch(function () {
-          showCopyToast(item, "Copy failed");
+          showCopyToast(item, "Copy failed!");
+          if (typeof window !== "undefined" && typeof window.prompt === "function") {
+            // Last-resort fallback for restricted iframe clipboard environments.
+            window.prompt("Copy stamp name:", text);
+          }
         });
       });
     });

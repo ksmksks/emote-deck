@@ -2,6 +2,13 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0-rc.4] - 2026-02-24
+- Switched mobile panel rendering to a content-driven (natural height) layout to better match Twitch app panel behavior.
+- Removed mobile fixed-height forcing that could cause content clipping/cut-off on some app screens.
+- Tuned mobile section/shell overflow behavior to avoid nested scroll conflicts and improve continuity.
+- Kept desktop panel behavior unchanged while applying the above adjustments only for `platform=mobile`.
+- Updated cheermote data sourcing to use Helix `GET /chat/emotes` with `emote_type=bitstier` (removed dependency on `GET /bits/cheermotes`).
+
 ## [1.1.0-rc.3] - 2026-02-23
 - Added `platform` detection from URL query and fallback behavior (`missing/unknown -> web`).
 - Added panel DOM platform markers (`data-ed-platform`) to enable platform-specific layout behavior.

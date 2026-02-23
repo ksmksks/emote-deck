@@ -103,7 +103,7 @@
   var state = {
     auth: null,
     config: Object.assign({}, RENDER.defaults),
-    data: createDemoData(),
+    data: createEmptyData(),
     activeTab: "emotes",
     saveTimer: null,
     pendingRemoteSave: false,
@@ -559,8 +559,10 @@
     var responseThemeMode = toArray(responseMeta && (responseMeta.theme_mode || responseMeta.theme_modes));
     var grouped = { "1000": [], "2000": [], "3000": [] };
     var follower = [];
+    var cheermotes = [];
     (items || []).forEach(function (emote) {
       var tier = String(emote.tier || "");
+      var emoteType = String(emote.emote_type || "").toLowerCase();
       var normalized = {
         id: emote.id,
         name: emote.name,
@@ -575,13 +577,18 @@
         grouped[tier].push(normalized);
         return;
       }
-      if (String(emote.emote_type || "").toLowerCase() === "follower") {
+      if (emoteType === "follower") {
         follower.push(normalized);
+        return;
+      }
+      if (emoteType === "bitstier") {
+        cheermotes.push(normalized);
       }
     });
     return {
       emotesByTier: grouped,
-      followerEmotes: follower
+      followerEmotes: follower,
+      cheerEmotes: cheermotes
     };
   }
 
@@ -613,53 +620,6 @@
     };
   }
 
-  function pickCheermoteImage(source) {
-    if (!source || typeof source !== "object") {
-      return "";
-    }
-    var preferredScales = ["4", "3", "2", "1.5", "1"];
-    for (var i = 0; i < preferredScales.length; i += 1) {
-      var scaleKey = preferredScales[i];
-      if (source[scaleKey]) {
-        return source[scaleKey];
-      }
-    }
-    return "";
-  }
-
-  function pickCheermoteThemeVariant(images, themeMode, animated) {
-    if (!images || typeof images !== "object") {
-      return "";
-    }
-    var mode = images[themeMode] || images.dark || images.light || {};
-    var group = animated ? (mode.animated || {}) : (mode.static || {});
-    return pickCheermoteImage(group);
-  }
-
-  function normalizeCheermotes(items) {
-    var cheermotes = [];
-    (items || []).forEach(function (item) {
-      var prefix = String(item.prefix || "Cheer");
-      (item.tiers || []).forEach(function (tier) {
-        var minBits = String(tier.min_bits || tier.id || "");
-        var animatedUrl = pickCheermoteThemeVariant(tier.images, "dark", true) || pickCheermoteThemeVariant(tier.images, "light", true);
-        var staticUrl = pickCheermoteThemeVariant(tier.images, "dark", false) || pickCheermoteThemeVariant(tier.images, "light", false);
-        var imageUrl = animatedUrl || staticUrl;
-        if (!imageUrl) {
-          return;
-        }
-        cheermotes.push({
-          id: String(tier.id || (prefix + "-" + minBits)),
-          name: prefix + " " + minBits,
-          imageUrl: staticUrl || imageUrl,
-          animatedImageUrl: animatedUrl || "",
-          staticImageUrl: staticUrl || imageUrl
-        });
-      });
-    });
-    return cheermotes;
-  }
-
   async function fetchLiveData() {
     if (!state.auth) {
       return;
@@ -668,20 +628,11 @@
     var badgesResponse = await callHelix("/chat/badges?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
     var normalizedEmotes = normalizeEmotes(emotesResponse.data, emotesResponse);
     var badges = normalizeBadges(badgesResponse.data);
-    var cheerEmotes = [];
-
-    try {
-      var cheermotesResponse = await callHelix("/bits/cheermotes?broadcaster_id=" + encodeURIComponent(state.auth.channelId));
-      cheerEmotes = normalizeCheermotes(cheermotesResponse.data);
-    } catch (error) {
-      // Keep config usable if only cheermotes retrieval fails.
-      console.warn("Cheermotes fetch failed:", error);
-    }
 
     state.data = {
       emotesByTier: normalizedEmotes.emotesByTier,
       followerEmotes: normalizedEmotes.followerEmotes,
-      cheerEmotes: cheerEmotes,
+      cheerEmotes: normalizedEmotes.cheerEmotes,
       subBadges: badges.subBadges,
       bitsBadges: badges.bitsBadges
     };
@@ -746,6 +697,16 @@
     syncRangeLabels();
     renderPreview();
     scheduleSave();
+  }
+
+  function createEmptyData() {
+    return {
+      emotesByTier: { "1000": [], "2000": [], "3000": [] },
+      followerEmotes: [],
+      cheerEmotes: [],
+      subBadges: [],
+      bitsBadges: []
+    };
   }
 
   function createDemoData() {
@@ -824,6 +785,8 @@
 
   async function initTwitchFlow() {
     if (!window.Twitch || !window.Twitch.ext) {
+      state.data = createDemoData();
+      renderPreview();
       setStatus("Running in local preview mode. Configuration is not persisted.", false);
       return;
     }
@@ -863,8 +826,9 @@
     writeForm(state.config);
     wireEvents();
     window.addEventListener("resize", renderPreview);
+    state.data = createEmptyData();
     renderPreview();
-    setStatus("Ready.", false);
+    setStatus("Waiting for Twitch authorization...", false);
     initTwitchFlow();
   }
 

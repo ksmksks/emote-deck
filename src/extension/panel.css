@@ -44,6 +44,7 @@
   --footer-inner-ring: rgba(255, 255, 255, 0.08);
   --header-glow: rgba(27, 63, 95, 0.38);
   --footer-glow: rgba(74, 39, 70, 0.38);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -57,18 +58,23 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   min-height: 100%;
   display: block;
   padding: 0;
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-bottom: calc(env(safe-area-inset-bottom));
   color: var(--text-color);
-  background: transparent;
+  background: var(--panel-bg);
   font-family: var(--font-family, "Trebuchet MS", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif);
   overflow: hidden;
+}
+
+html[data-ed-host="twitch"],
+body[data-ed-host="twitch"] {
+  --safe-bottom: 0px;
 }
 
 #panel-root {
@@ -77,13 +83,17 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #app {
   flex: 1 1 auto;
-  min-height: 0;
+  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: var(--panel-bg);
 }
 
 .status {
@@ -105,7 +115,7 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 100%;
+  min-height: 0;
   font-family: var(--font-family, "Trebuchet MS", "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif);
   display: flex;
   flex-direction: column;
@@ -190,7 +200,7 @@ body {
   max-height: 800px;
   overflow-y: auto;
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
   padding-right: 2px;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -358,12 +368,13 @@ body {
   top: 6px;
   padding: 3px 6px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(12, 20, 36, 0.94);
-  color: #f8fbff;
+  border: 1px solid #b8e8c1;
+  background: #ffffff;
+  color: #1d9b46;
   font-size: 9px;
   line-height: 1;
   z-index: 5;
+  font-weight: 700;
   animation: copy-pop 900ms ease forwards;
 }
 
@@ -371,14 +382,18 @@ body {
   margin: 4px 0 0;
   padding: 12px;
   border-radius: var(--radius);
-  border: 1px dashed var(--accent-glow);
-  background: rgba(16, 22, 38, 0.78);
+  border: 1px dashed var(--tab-border);
+  background: linear-gradient(130deg, var(--panel-bg), var(--stamp-bg));
+  color: var(--panel-text);
   font-size: 11px;
 }
 
 .ed-footer {
-  padding: 7px 10px;
-  margin: 0;
+  margin-top: auto;
+  padding: 7px 10px calc(7px + var(--safe-bottom));
+  margin-right: 0;
+  margin-bottom: 0;
+  margin-left: 0;
   border-radius: calc(var(--radius) - 2px);
   background: linear-gradient(130deg, var(--footer-grad-start), var(--footer-grad-end));
   color: var(--footer-text);
@@ -479,6 +494,9 @@ body {
 [data-ed-platform="mobile"] .ed-shell {
   gap: 6px;
   padding: 8px;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 [data-ed-platform="mobile"] .ed-header {
@@ -502,6 +520,9 @@ body {
 
 [data-ed-platform="mobile"] .section {
   max-height: none;
+  overflow: visible;
+  flex: 0 0 auto;
+  padding-right: 0;
 }
 
 [data-ed-platform="mobile"] .ed-grid {
@@ -509,7 +530,8 @@ body {
 }
 
 [data-ed-platform="mobile"] .ed-footer {
-  padding: 6px 8px;
+  padding: 6px 8px calc(6px + var(--safe-bottom));
+  margin-top: 8px;
 }
 
 [data-ed-platform="mobile"] .ed-footer-row {
@@ -522,6 +544,21 @@ body {
 
 [data-ed-platform="mobile"] .ed-footer-meta {
   font-size: 8px;
+}
+
+html[data-ed-platform="mobile"],
+body[data-ed-platform="mobile"] {
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+[data-ed-platform="mobile"] #panel-root,
+[data-ed-platform="mobile"] #app {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 @media (max-width: 360px) {
