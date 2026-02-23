@@ -2,6 +2,13 @@
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0-rc.3] - 2026-02-23
+- Added `platform` detection from URL query and fallback behavior (`missing/unknown -> web`).
+- Added panel DOM platform markers (`data-ed-platform`) to enable platform-specific layout behavior.
+- Added mobile-specific panel layout tuning for tab density, spacing, and footer/header sizing.
+- Updated render layout math to use wider shell width rules on mobile and keep web behavior unchanged.
+- Improved non-Twitch mobile fallback messaging to clarify that Helix data requires Twitch extension context.
+
 ## [1.1.0-rc.2] - 2026-02-22
 - Added `Labels and Interactions` settings group and moved `Stamps Names` / `Badges Names` toggles out of Visibility.
 - Added adjustable name label size controls for stamps and badges.
@@ -25,10 +32,6 @@ This project follows [Semantic Versioning](https://semver.org/).
 - Added a release roadmap to separate patch stabilization (`1.0.1`) from the upcoming feature release line (`1.1.0-rc.1` -> `1.1.0`).
 
 ## Roadmap
-### [1.1.0-rc.3] - planned
-- Improve mobile popout behavior and platform-specific layout handling for Twitch mobile contexts.
-- Add platform detection fallback: treat missing platform query as web and only switch mobile UI when platform=mobile.
-
 ### [1.1.0] - planned
 - Run final regression checks for panel/config rendering and Helix data fetch flows.
 - Finalize release notes and publish as stable 1.1.0.

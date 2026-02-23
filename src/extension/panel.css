@@ -476,6 +476,54 @@ body {
   }
 }
 
+[data-ed-platform="mobile"] .ed-shell {
+  gap: 6px;
+  padding: 8px;
+}
+
+[data-ed-platform="mobile"] .ed-header {
+  padding: 7px 8px;
+}
+
+[data-ed-platform="mobile"] .ed-title {
+  font-size: clamp(14px, 4.8vw, 17px);
+}
+
+[data-ed-platform="mobile"] .ed-tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+[data-ed-platform="mobile"] .ed-tab {
+  min-height: 34px;
+  padding: 8px 6px;
+  font-size: 12px;
+}
+
+[data-ed-platform="mobile"] .section {
+  max-height: none;
+}
+
+[data-ed-platform="mobile"] .ed-grid {
+  grid-template-columns: repeat(var(--effective-columns, var(--columns, 3)), minmax(0, 1fr));
+}
+
+[data-ed-platform="mobile"] .ed-footer {
+  padding: 6px 8px;
+}
+
+[data-ed-platform="mobile"] .ed-footer-row {
+  gap: 6px;
+}
+
+[data-ed-platform="mobile"] .ed-footer-text {
+  font-size: 9px;
+}
+
+[data-ed-platform="mobile"] .ed-footer-meta {
+  font-size: 8px;
+}
+
 @media (max-width: 360px) {
   #panel-root,
   .ed-shell {

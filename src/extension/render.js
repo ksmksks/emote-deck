@@ -1022,6 +1022,19 @@
     });
   }
 
+  function resolveRenderPlatform(cfg) {
+    return String((cfg && cfg.platform) || "web").toLowerCase() === "mobile" ? "mobile" : "web";
+  }
+
+  function getShellWidth(container, platform) {
+    var fallback = platform === "mobile" ? 320 : 300;
+    var width = container && container.clientWidth ? container.clientWidth : fallback;
+    if (platform === "mobile") {
+      return clamp(width, 220, 640);
+    }
+    return Math.min(width, 300);
+  }
+
   function render(container, rawData, rawConfig) {
     if (!container) {
       return;
@@ -1029,9 +1042,11 @@
 
     var cfg = normalizeConfig(rawConfig);
     var model = normalizeData(rawData);
+    var renderPlatform = resolveRenderPlatform(cfg);
+    container.setAttribute("data-ed-platform", renderPlatform);
     applyThemeVariables(cfg);
 
-    var layout = calculateLayoutMetrics(container, cfg);
+    var layout = calculateLayoutMetrics(container, cfg, renderPlatform);
 
     container.style.setProperty("--columns", String(cfg.columns));
     container.style.setProperty("--effective-columns", String(layout.effectiveColumns));
@@ -1123,24 +1138,22 @@
     }
   }
 
-  function calculateEffectiveColumns(container, desiredColumns, minFrameSize, itemGap) {
+  function calculateEffectiveColumns(container, desiredColumns, minFrameSize, itemGap, platform) {
     var columns = clamp(parseInt(desiredColumns, 10) || 1, 1, 8);
-    var width = container && container.clientWidth ? container.clientWidth : 300;
-    var shellWidth = Math.min(width, 300);
+    var shellWidth = getShellWidth(container, platform);
     var usableWidth = Math.max(120, shellWidth - 24);
     var perItem = Math.max(40, minFrameSize);
     var fit = Math.floor((usableWidth + itemGap) / (perItem + itemGap));
     return clamp(fit || 1, 1, columns);
   }
 
-  function calculateLayoutMetrics(container, cfg) {
-    var width = container && container.clientWidth ? container.clientWidth : 300;
-    var shellWidth = Math.min(width, 300);
+  function calculateLayoutMetrics(container, cfg, platform) {
+    var shellWidth = getShellWidth(container, platform);
     var usableWidth = Math.max(120, shellWidth - 24);
     // Keep frame compact enough to allow 6+ columns when padding/gap are small.
     var minFrameSize = Math.max(24, cfg.itemPadding * 2 + 18);
-    var maxColumnsFit = calculateEffectiveColumns(container, 8, minFrameSize, cfg.itemGap);
-    var effectiveColumns = calculateEffectiveColumns(container, cfg.columns, minFrameSize, cfg.itemGap);
+    var maxColumnsFit = calculateEffectiveColumns(container, 8, minFrameSize, cfg.itemGap, platform);
+    var effectiveColumns = calculateEffectiveColumns(container, cfg.columns, minFrameSize, cfg.itemGap, platform);
     var frameSize = Math.floor((usableWidth - cfg.itemGap * (effectiveColumns - 1)) / effectiveColumns);
     frameSize = Math.max(minFrameSize, frameSize);
     var inner = Math.max(20, frameSize - cfg.itemPadding * 2 - 2);

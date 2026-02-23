@@ -16,7 +16,8 @@
     data: createDemoData(),
     config: Object.assign({}, RENDER.defaults),
     activeTab: "emotes",
-    showInfoStatus: false
+    showInfoStatus: false,
+    platform: "web"
   };
 
   function setStatus(message, isError, forceShow) {
@@ -24,6 +25,28 @@
     statusElement.classList.toggle("is-error", !!isError);
     var visible = !!isError || !!forceShow;
     statusElement.style.display = visible && message ? "block" : "none";
+  }
+
+  function normalizePlatform(raw) {
+    var value = String(raw || "").toLowerCase();
+    return value === "mobile" ? "mobile" : "web";
+  }
+
+  function detectPlatformFromQuery() {
+    try {
+      var params = new URLSearchParams(window.location.search || "");
+      return normalizePlatform(params.get("platform"));
+    } catch (_error) {
+      return "web";
+    }
+  }
+
+  function applyPlatformToDom(platform) {
+    var normalized = normalizePlatform(platform);
+    document.documentElement.setAttribute("data-ed-platform", normalized);
+    if (document.body) {
+      document.body.setAttribute("data-ed-platform", normalized);
+    }
   }
 
   function getPersistedKeys(config) {
@@ -71,6 +94,7 @@
 
   function renderPanel() {
     var configForRender = Object.assign({}, state.config, {
+      platform: state.platform,
       activeTab: state.activeTab,
       onTabChange: function (nextTab) {
         state.activeTab = nextTab;
@@ -317,9 +341,16 @@
   }
 
   async function initTwitchFlow() {
+    state.platform = detectPlatformFromQuery();
+    applyPlatformToDom(state.platform);
+
     if (!window.Twitch || !window.Twitch.ext) {
       state.showInfoStatus = true;
-      setStatus("Running in demo mode outside Twitch.", false, true);
+      if (state.platform === "mobile") {
+        setStatus("Demo mode (mobile layout). Helix data requires Twitch extension context.", false, true);
+      } else {
+        setStatus("Running in demo mode outside Twitch.", false, true);
+      }
       renderPanel();
       return;
     }
