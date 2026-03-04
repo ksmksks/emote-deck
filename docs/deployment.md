@@ -17,11 +17,15 @@ build\build.bat
 1. 対象 Extension を開く
 2. `Versions` で新規バージョン作成
 3. `EmoteDeck-extension.zip` をアップロード
-4. `Hosted Test` で動作確認
+4. `Hosted Test` で Config / Panel / Mobile を確認
 5. 問題なければ `Release`
 
 ## 3. 動作確認チェック
-- Panel で Emotes/Sub Badges/Bits Badges がタブ表示できる
-- Config 変更がリアルタイムでプレビュー反映される
-- Config 保存後に Panel へ反映される
-- popout URL をスマホで開いて safe-area が崩れない
+- `Stamps` タブで Follower / Tier 1 / Tier 2 / Tier 3 / Cheermotes が表示される
+- `Badges` タブで Subscriber Badges / Bits Badges が表示される
+- Visibility でカテゴリ・個別の ON/OFF が反映される
+- ドラッグアンドドロップ並び替えが反映される
+- Hover Tooltip とクリックコピーが動作する
+- Config 変更がリアルタイムでプレビューに反映される
+- Config 保存後に Panel / Mobile 表示へ反映される
+- モバイル表示でレイアウト崩れや不自然な余白がない

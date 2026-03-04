@@ -531,7 +531,7 @@ body[data-ed-host="twitch"] {
 
 [data-ed-platform="mobile"] .ed-footer {
   padding: 6px 8px calc(6px + var(--safe-bottom));
-  margin-top: 8px;
+  margin-top: auto;
 }
 
 [data-ed-platform="mobile"] .ed-footer-row {

@@ -14,8 +14,19 @@
   - `Client-ID: auth.clientId`
   - `Authorization: Extension {auth.helixToken}`
 
+## データ分類
+- `chat/emotes` を `emote_type` / `tier` で分類
+  - Follower
+  - Tier 1 / Tier 2 / Tier 3
+  - Cheermotes（`bitstier`）
+- `chat/badges` を分類
+  - Subscriber Badges
+  - Bits Badges
+
 ## UI方針
 - タブ UI でカテゴリは同時表示しない
+- タブは `Stamps` / `Badges` の2構成
+- 個別可視性制御、並び替え、Tooltip、クリックコピーをサポート
 - セクションは縦スクロール制御
   - `.section { max-height: 800px; overflow-y: auto; }`
 - テーマは CSS 変数で管理
@@ -28,5 +39,5 @@
 ## レスポンシブ方針
 - `viewport-fit=cover` を使用
 - `padding-bottom: env(safe-area-inset-bottom);` を使用
-- 固定幅は使わない
 - グリッドは `repeat(auto-fill, minmax(72px, 1fr))`
+- `platform`（web/mobile）で余白・高さ・スクロール戦略を調整
